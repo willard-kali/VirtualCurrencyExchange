@@ -1,12 +1,25 @@
 package com.business.exchange.domain;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
 public class Business {
-    private int id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int exchangeId;
+
     private int srcUserId;
     private int destUserId;
     private String exchangeDate;
     private int exchangeCurrencyNumber;
     private String exchangeReason;
+
+    public Business() {
+    }
 
     /**
      * id自动生成，其他字段必填

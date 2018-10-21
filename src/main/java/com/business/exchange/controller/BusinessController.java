@@ -16,6 +16,9 @@ public class BusinessController {
     @RequestMapping(value = "create", method = RequestMethod.GET)
     public String create(int currUserId, String destEmployeeID, int exchangeCurrencyNumber, String exchangeReason) {
         //todo
+        if (currUserId < 0) {
+
+        }
         return "";
     }
 
