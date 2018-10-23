@@ -55,6 +55,22 @@ public class User {
         this.password = UserConstants.DEFAULT_PWD;
     }
 
+    public int getUserId() {
+        return userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setCurrencyNumber(int currencyNumber) {
+        this.currencyNumber = currencyNumber;
+    }
+
+    public int getCurrencyNumber() {
+        return currencyNumber;
+    }
+
     public String getPassword() {
         return password;
     }
@@ -65,6 +81,14 @@ public class User {
 
     public boolean isValid() {
         return !employeeID.isEmpty();
+    }
+
+    public String toRankString() {
+        return "{" +
+                "\"userName\": \"" + userName + '\"' +
+                ", \"employeeID\": \"" + employeeID + '\"' +
+                ", \"currencyNumber\": " + currencyNumber +
+                '}';
     }
 
     @Override

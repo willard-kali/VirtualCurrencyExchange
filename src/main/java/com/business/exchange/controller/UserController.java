@@ -4,6 +4,7 @@ import com.business.exchange.domain.BaseResponse;
 import com.business.exchange.domain.User;
 import com.business.exchange.domain.UserQueryResult;
 import com.business.exchange.service.UserService;
+import com.business.exchange.utils.CurrencyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 
@@ -80,7 +80,7 @@ public class UserController {
             LOGGER.error("department incorrect.");
         } else if (null == group || "".equals(group)) {
             LOGGER.error("group incorrect.");
-        } else if (currencyNumber < 0 || !isValidCurrencyNumber(currencyNumber)) {
+        } else if (currencyNumber < 0 || !CurrencyUtils.isValidCurrencyNumber(currencyNumber)) {
             LOGGER.error("currencyNumber incorrect.");
         } else {
             LOGGER.info("params check valid, begin to create.");
@@ -130,14 +130,5 @@ public class UserController {
             LOGGER.info("reset user password finished, status is: {}", pwdStatus);
         }
         return pwdStatus;
-    }
-
-    /**
-     * currency number must multiple of 5
-     * @param currencyNumber currency number
-     * @return whether is valid
-     */
-    private boolean isValidCurrencyNumber(int currencyNumber) {
-        return currencyNumber % 5 == 0;
     }
 }
