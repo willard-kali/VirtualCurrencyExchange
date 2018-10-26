@@ -1,4 +1,6 @@
-package com.business.exchange.domain;
+package com.business.exchange.model;
+
+import com.business.exchange.domain.User;
 
 import java.util.List;
 

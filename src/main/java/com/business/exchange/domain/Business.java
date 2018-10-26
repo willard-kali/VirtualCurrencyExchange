@@ -4,6 +4,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.sql.Timestamp;
 
 @Entity
 public class Business {
@@ -14,7 +15,9 @@ public class Business {
 
     private int srcUserId;
     private int destUserId;
-    private String exchangeDate;
+    private String destUserName;
+    private String destEmployeeID;
+    private Timestamp exchangeDate;
     private int exchangeCurrencyNumber;
     private String exchangeReason;
 
@@ -29,9 +32,29 @@ public class Business {
      * @param exchangeCurrencyNumber 交易货币数量
      * @param exchangeReason 交易理由
      */
-    public Business(int srcUserId, int destUserId, String exchangeDate, int exchangeCurrencyNumber, String exchangeReason) {
+    public Business(int srcUserId, int destUserId, Timestamp exchangeDate, int exchangeCurrencyNumber, String exchangeReason) {
         this.srcUserId = srcUserId;
         this.destUserId = destUserId;
+        this.exchangeDate = exchangeDate;
+        this.exchangeCurrencyNumber = exchangeCurrencyNumber;
+        this.exchangeReason = exchangeReason;
+    }
+
+    /**
+     *
+     * @param srcUserId
+     * @param destUserId
+     * @param destUserName
+     * @param destEmployeeID
+     * @param exchangeDate
+     * @param exchangeCurrencyNumber
+     * @param exchangeReason
+     */
+    public Business(int srcUserId, int destUserId, String destUserName, String destEmployeeID, Timestamp exchangeDate, int exchangeCurrencyNumber, String exchangeReason) {
+        this.srcUserId = srcUserId;
+        this.destUserId = destUserId;
+        this.destUserName = destUserName;
+        this.destEmployeeID = destEmployeeID;
         this.exchangeDate = exchangeDate;
         this.exchangeCurrencyNumber = exchangeCurrencyNumber;
         this.exchangeReason = exchangeReason;
@@ -45,4 +68,17 @@ public class Business {
         return this.exchangeCurrencyNumber % 5 == 0;
     }
 
+    @Override
+    public String toString() {
+        return "Business{" +
+                "exchangeId=" + exchangeId +
+                ", srcUserId=" + srcUserId +
+                ", destUserId=" + destUserId +
+                ", destUserName='" + destUserName + '\'' +
+                ", destEmployeeID='" + destEmployeeID + '\'' +
+                ", exchangeDate=" + exchangeDate +
+                ", exchangeCurrencyNumber=" + exchangeCurrencyNumber +
+                ", exchangeReason='" + exchangeReason + '\'' +
+                '}';
+    }
 }

@@ -1,9 +1,13 @@
 package com.business.exchange.domain;
 
 import com.business.exchange.constant.UserConstants;
+import com.business.exchange.model.UserType;
 
 import javax.persistence.*;
 
+/**
+ * 用户类
+ */
 @Entity
 public class User {
 
@@ -27,6 +31,11 @@ public class User {
     private int currencyNumber;
 
     public User() {
+    }
+
+    public User(String employeeID, String password) {
+        this.employeeID = employeeID;
+        this.password = password;
     }
 
     /**
@@ -59,8 +68,24 @@ public class User {
         return userId;
     }
 
+    public UserType getUserType() {
+        return userType;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public String getUserGroup() {
+        return userGroup;
+    }
+
     public String getUserName() {
         return userName;
+    }
+
+    public String getEmployeeID() {
+        return employeeID;
     }
 
     public void setCurrencyNumber(int currencyNumber) {
@@ -79,10 +104,6 @@ public class User {
         this.password = password;
     }
 
-    public boolean isValid() {
-        return !employeeID.isEmpty();
-    }
-
     public String toRankString() {
         return "{" +
                 "\"userName\": \"" + userName + '\"' +
@@ -94,14 +115,13 @@ public class User {
     @Override
     public String toString() {
         return "{" +
-                "userId: " + userId +
-                ", userType: " + userType.ordinal() +
-                ", userName: '" + userName + '\'' +
-                ", employeeID: '" + employeeID + '\'' +
-//                ", password: '" + password + '\'' +
-                ", department: '" + department + '\'' +
-                ", userGroup: '" + userGroup + '\'' +
-                ", currencyNumber: " + currencyNumber +
+                "\"userId\": " + userId +
+                ", \"userType\": " + userType.ordinal() +
+                ", \"userName\": \"" + userName + '\"' +
+                ", \"employeeID\": \"" + employeeID + '\"' +
+                ", \"department\": \"" + department + '\"' +
+                ", \"userGroup\": \"" + userGroup + '\"' +
+                ", \"currencyNumber\": " + currencyNumber +
                 '}';
     }
 }

@@ -1,4 +1,4 @@
-package com.business.exchange.domain;
+package com.business.exchange.model;
 
 /**
  * 用户类型

@@ -1,22 +1,25 @@
 package com.business.exchange.service;
 
-import com.business.exchange.domain.BaseResponse;
-import com.business.exchange.domain.User;
-import com.business.exchange.domain.UserQueryResult;
+import com.business.exchange.domain.*;
+import com.business.exchange.model.LoginResponse;
+import com.business.exchange.model.Response;
+import com.business.exchange.model.UserResponse;
 
 public interface UserService {
 
-    User valid(String employeeID, String password);
-
-    BaseResponse login(String employeeID, String password);
+    LoginResponse login(String employeeID, String password);
 
     String create(String userName, String employeeID, String department, String group, int currencyNumber);
 
-    UserQueryResult query(String employeeID);
+//    UserQueryResult query(String employeeID);
 
-    UserQueryResult queryAll();
+    User queryUser(String employeeID);
+
+//    UserQueryResult queryAll();
 
     String modify();
 
-    String password(String employeeID, String oldPwd, String newPwd);
+    Response password(String employeeID, String oldPwd, String newPwd);
+
+    UserResponse holdRank();
 }

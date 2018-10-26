@@ -1,13 +1,16 @@
 package com.business.exchange.service;
 
+import com.business.exchange.constant.RespDefine;
 import com.business.exchange.controller.UserController;
-import com.business.exchange.domain.BaseResponse;
-import com.business.exchange.domain.UserQueryResult;
-import com.business.exchange.domain.User;
-import com.business.exchange.domain.UserRepository;
+import com.business.exchange.domain.*;
+import com.business.exchange.model.LoginResponse;
+import com.business.exchange.model.Response;
+import com.business.exchange.model.UserQueryResult;
+import com.business.exchange.model.UserResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,29 +27,13 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
 
     @Override
-    public User valid(String employeeID, String password) {
-        User user = userRepository.findByEmployeeID(employeeID);
-        if (null == user) {
-            LOGGER.warn("no valid user from employeeID: {}.", employeeID);
-            return new User();
-        } else if (user.getPassword().equals(password)){
-            return user;
-        } else {
-            LOGGER.error("password incorrect for employeeID: {}.", employeeID);
-            return new User();
-        }
-    }
-
-    @Override
-    public BaseResponse login(String employeeID, String password) {
-        BaseResponse response = new BaseResponse(false);
+    public LoginResponse login(String employeeID, String password) {
+        LoginResponse response = new LoginResponse(RespDefine.DESC_LOGIN_ERROR, "");
         User user = userRepository.findByEmployeeID(employeeID);
         if (null == user) {
             LOGGER.warn("no valid user from employeeID: {}.", employeeID);
         } else if (user.getPassword().equals(password)){
-            response.setOk(true);
-            response.setMessage("login success");
-            response.setData(user);
+            response = new LoginResponse(RespDefine.DESC_LOGIN_OK, user.getUserType().getValue());
         } else {
             LOGGER.error("password incorrect for employeeID: {}.", employeeID);
         }
@@ -60,7 +47,7 @@ public class UserServiceImpl implements UserService {
         return CREATE_SUCCESS;
     }
 
-    @Override
+    /*@Override
     public UserQueryResult query(String employeeID) {
         User user = userRepository.findByEmployeeID(employeeID);
         if (null == user) {
@@ -71,9 +58,20 @@ public class UserServiceImpl implements UserService {
             users.add(user);
             return new UserQueryResult(users.size(), users);
         }
-    }
+    }*/
 
     @Override
+    public User queryUser(String employeeID) {
+        User user = userRepository.findByEmployeeID(employeeID);
+        if (null == user) {
+            LOGGER.warn("no user info by query: {}.", employeeID);
+            return new User();
+        } else {
+            return user;
+        }
+    }
+
+    /*@Override
     public UserQueryResult queryAll() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
@@ -82,30 +80,66 @@ public class UserServiceImpl implements UserService {
         } else {
             return new UserQueryResult(users.size(), users);
         }
-    }
+    }*/
 
     @Override
     public String modify() {
         return null;
     }
 
+    /**
+     * 用户修改密码
+     * @param employeeID 工号
+     * @param oldPwd 旧密码
+     * @param newPwd 新密码
+     * @return 修改是否成功
+     */
     @Override
-    public String password(String employeeID, String oldPwd, String newPwd) {
-        String passwordStatus = PWD_FAILED;
+    public Response password(String employeeID, String oldPwd, String newPwd) {
+        Response modifyPwdResponse = new Response(RespDefine.ERR_CODE_PASSWORD_MODIFY_FAILED,
+                RespDefine.ERR_DESC_PASSWORD_MODIFY_FAILED);
         User user = userRepository.findByEmployeeID(employeeID);
-        if (null == user) {
-            LOGGER.error("employeeID incorrect.");
-            return passwordStatus;
+        if (null == user || null == user.getPassword() || user.getPassword().isEmpty()) {
+            LOGGER.error("employeeID is incorrect.");
+            return modifyPwdResponse;
         }
+
         if (user.getPassword().equals(oldPwd)) {
             user.setPassword(newPwd);
             userRepository.saveAndFlush(user);
-            passwordStatus = PWD_SUCCESS;
+            modifyPwdResponse = new Response(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+            return modifyPwdResponse;
         } else {
-            LOGGER.error("old password incorrect.");
+            LOGGER.error("old password input incorrect.");
+            return modifyPwdResponse;
         }
-        return passwordStatus;
     }
 
+    /**
+     * 虚拟货币持有量排行
+     * @return 用户排行榜
+     */
+    @Override
+    public UserResponse holdRank() {
+
+        UserResponse holdRankUsersResp = new UserResponse(RespDefine.ERR_CODE_QUERY_HOLD_RANK_FAILED,
+                RespDefine.ERR_DESC_QUERY_HOLD_RANK_FAILED);
+
+        List<User> ownRankUsers = userRepository.findAll(
+                Sort.by(
+                        Sort.Order.desc("currencyNumber"),
+                        Sort.Order.desc("userId")
+                )
+        );
+
+        if (null == ownRankUsers || ownRankUsers.size() == 0) {
+            LOGGER.error("current system's users is empty.");
+            return holdRankUsersResp;
+        }
+
+        holdRankUsersResp = new UserResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, ownRankUsers);
+
+        return holdRankUsersResp;
+    }
 
 }
