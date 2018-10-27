@@ -102,7 +102,7 @@ public class UserController {
             return userInfoResp;
         }
 
-        BusinessResponse businessResponse = businessService.history(user.getUserId());
+        BusinessResponse businessResponse = businessService.history(user.getUserId(), user.getEmployeeID());
 
         if (null == businessResponse || null == businessResponse.getBusinesses()) {
             LOGGER.error("business response error.");

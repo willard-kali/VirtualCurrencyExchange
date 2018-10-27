@@ -33,6 +33,10 @@ public class Task {
         this.taskStatus = taskStatus;
     }
 
+    public int getTaskID() {
+        return taskID;
+    }
+
     public int getPublisherID() {
         return publisherID;
     }
@@ -51,5 +55,9 @@ public class Task {
 
     public void setTaskStatus(TaskStatus taskStatus) {
         this.taskStatus = taskStatus;
+    }
+
+    public Timestamp getPublishTime() {
+        return publishTime;
     }
 }

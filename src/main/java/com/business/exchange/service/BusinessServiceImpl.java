@@ -88,7 +88,7 @@ public class BusinessServiceImpl implements BusinessService {
         }
 
         List<Business> businesses = businessRepository
-                .findAllBySrcUserIdEqualsOrDestUserIdEqualsOOrderByExchangeDateDesc(userId, userId);
+                .findAllBySrcUserIdEqualsOrDestUserIdEqualsOrderByExchangeDateDesc(userId, userId);
 
         if (null == businesses) {
             LOGGER.error("no exchange history to record.");
