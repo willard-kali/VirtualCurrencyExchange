@@ -5,7 +5,7 @@ import com.business.exchange.domain.Task;
 import com.business.exchange.domain.TaskRepository;
 import com.business.exchange.domain.User;
 import com.business.exchange.domain.UserRepository;
-import com.business.exchange.model.Response;
+import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
 import com.business.exchange.model.TaskStatus;
 import org.slf4j.Logger;
@@ -32,18 +32,22 @@ public class TaskServiceImpl implements TaskService {
 
     /**
      * 发布任务
-     * @param publisherID 发布者ID
+     * @param employeeID 发布者工号
      * @param taskName 任务名称
      * @param bounty 悬赏金额
      * @return 发布状态
      */
     @Override
-    public Response initiate(int publisherID, String taskName, int bounty) {
-        Response createResponse = new Response(RespDefine.ERR_CODE_TASK_CREATE_FAILED, RespDefine.ERR_DESC_TASK_CREATE_FAILED);
-        User user = userRepository.findByUserId(publisherID);
+    public BaseResponse create(String employeeID, String taskName, int bounty) {
+        BaseResponse createResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_CREATE_FAILED, RespDefine.ERR_DESC_TASK_CREATE_FAILED);
+        User user = userRepository.findByEmployeeID(employeeID);
 
         //用户信息错误
-        if (null == user || user.getCurrencyNumber() < 0) {
+        if (null == user
+                || user.getCurrencyNumber() < 0
+                || user.getUserId() <= 0
+                || user.getEmployeeID().isEmpty()
+                || user.getUserName().isEmpty()) {
             LOGGER.error("publisher id is invalid.");
             return createResponse;
         }
@@ -56,11 +60,11 @@ public class TaskServiceImpl implements TaskService {
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
-        Task task = new Task(publisherID, taskName, timestamp, TaskStatus.ONGOING);
+        Task task = new Task(user.getUserId(), user.getEmployeeID(), user.getUserName(), taskName, bounty, timestamp, TaskStatus.ONGOING);
 
         taskRepository.saveAndFlush(task);
 
-        createResponse = new Response(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        createResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
 
         return createResponse;
     }
@@ -72,12 +76,12 @@ public class TaskServiceImpl implements TaskService {
      * @return 结果
      */
     @Override
-    public Response finish(int taskId, String employeeID) {
+    public BaseResponse close(int taskId, String employeeID) {
 
-        Response finishTaskResponse = new Response(RespDefine.ERR_CODE_TASK_FINISH_FAILED,
+        BaseResponse finishTaskResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_FINISH_FAILED,
                 RespDefine.ERR_DESC_TASK_FINISH_FAILED);
 
-        Task task = taskRepository.findByTaskID(taskId);
+        Task task = taskRepository.findByTaskId(taskId);
 
         if (null == task || null == task.getTaskStatus() || task.getTaskStatus().equals(TaskStatus.CLOSED)) {
             LOGGER.error("task status error.");
@@ -102,7 +106,7 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.saveAndFlush(task);
 
-        finishTaskResponse = new Response(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        finishTaskResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
 
         return finishTaskResponse;
     }
@@ -122,4 +126,26 @@ public class TaskServiceImpl implements TaskService {
 
         return queryAllTaskResponse;
     }
+
+    @Override
+    public TaskResponse queryMine(String employeeID) {
+        TaskResponse myTaskResp = new TaskResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED, RespDefine.ERR_DESC_TASK_QUERY_FAILED);
+        User user = userRepository.findByEmployeeID(employeeID);
+        if (null == user || user.getUserId() <= 0) {
+            LOGGER.error("current user session is invalid.");
+            return myTaskResp;
+        }
+
+        List<Task> task = taskRepository.findByPublisherIDOrderByPublishTimeDesc(user.getUserId());
+
+        if (null == task) {
+            LOGGER.error("task query result null.");
+            return myTaskResp;
+        }
+
+        myTaskResp = new TaskResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, task);
+
+        return myTaskResp;
+    }
+
 }

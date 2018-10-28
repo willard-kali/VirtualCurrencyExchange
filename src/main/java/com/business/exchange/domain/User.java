@@ -1,6 +1,5 @@
 package com.business.exchange.domain;
 
-import com.business.exchange.constant.UserConstants;
 import com.business.exchange.model.UserType;
 
 import javax.persistence.*;
@@ -22,7 +21,7 @@ public class User {
 
     private String employeeID;
 
-    private String password;
+//    private String password;
 
     private String department;
 
@@ -33,9 +32,9 @@ public class User {
     public User() {
     }
 
-    public User(String employeeID, String password) {
+    public User(String employeeID/*, String password*/) {
         this.employeeID = employeeID;
-        this.password = password;
+//        this.password = password;
     }
 
     /**
@@ -52,7 +51,7 @@ public class User {
         this.department = department;
         this.userGroup = userGroup;
         this.currencyNumber = currencyNumber;
-        setDefaultPwd();
+//        setDefaultPwd();
         setDefaultUserType();
     }
 
@@ -60,9 +59,9 @@ public class User {
         this.userType = UserType.ORDINARY_USER;
     }
 
-    private void setDefaultPwd() {
+    /*private void setDefaultPwd() {
         this.password = UserConstants.DEFAULT_PWD;
-    }
+    }*/
 
     public int getUserId() {
         return userId;
@@ -96,13 +95,13 @@ public class User {
         return currencyNumber;
     }
 
-    public String getPassword() {
+    /*public String getPassword() {
         return password;
     }
 
     public void setPassword(String password) {
         this.password = password;
-    }
+    }*/
 
     public String toRankString() {
         return "{" +

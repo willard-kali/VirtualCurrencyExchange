@@ -2,7 +2,7 @@ package com.business.exchange.model;
 
 import com.business.exchange.domain.User;
 
-public class UserProfileResponse extends Response {
+public class UserProfileResponse extends BaseResponse {
 
     private User user;
 

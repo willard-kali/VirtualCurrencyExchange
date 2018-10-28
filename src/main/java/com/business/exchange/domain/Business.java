@@ -60,12 +60,68 @@ public class Business {
         this.exchangeReason = exchangeReason;
     }
 
-    /**
-     * exchangeCurrencyNumber必须是5的整数倍
-     * @return 是否有效的交易额
-     */
-    public boolean isExchangeCurrencyNumberValid() {
-        return this.exchangeCurrencyNumber % 5 == 0;
+    public int getSrcUserId() {
+        return srcUserId;
+    }
+
+    public int getDestUserId() {
+        return destUserId;
+    }
+
+    public String getDestUserName() {
+        return destUserName;
+    }
+
+    public String getDestEmployeeID() {
+        return destEmployeeID;
+    }
+
+    public Timestamp getExchangeDate() {
+        return exchangeDate;
+    }
+
+    public int getExchangeCurrencyNumber() {
+        return exchangeCurrencyNumber;
+    }
+
+    public String getExchangeReason() {
+        return exchangeReason;
+    }
+
+    public int getExchangeId() {
+        return exchangeId;
+    }
+
+    public void setExchangeId(int exchangeId) {
+        this.exchangeId = exchangeId;
+    }
+
+    public void setSrcUserId(int srcUserId) {
+        this.srcUserId = srcUserId;
+    }
+
+    public void setDestUserId(int destUserId) {
+        this.destUserId = destUserId;
+    }
+
+    public void setDestUserName(String destUserName) {
+        this.destUserName = destUserName;
+    }
+
+    public void setDestEmployeeID(String destEmployeeID) {
+        this.destEmployeeID = destEmployeeID;
+    }
+
+    public void setExchangeDate(Timestamp exchangeDate) {
+        this.exchangeDate = exchangeDate;
+    }
+
+    public void setExchangeCurrencyNumber(int exchangeCurrencyNumber) {
+        this.exchangeCurrencyNumber = exchangeCurrencyNumber;
+    }
+
+    public void setExchangeReason(String exchangeReason) {
+        this.exchangeReason = exchangeReason;
     }
 
     @Override

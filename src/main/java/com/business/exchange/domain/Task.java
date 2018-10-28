@@ -10,9 +10,13 @@ public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int taskID;
+    private int taskId;
 
     private int publisherID;
+
+    private String publisherEmployeeID;
+
+    private String publisherName;
 
     private String taskName;
 
@@ -26,19 +30,30 @@ public class Task {
     public Task() {
     }
 
-    public Task(int publisherID, String taskName, Timestamp publishTime, TaskStatus taskStatus) {
+    public Task(int publisherID, String publisherEmployeeID, String publisherName, String taskName, int bounty, Timestamp publishTime, TaskStatus taskStatus) {
         this.publisherID = publisherID;
+        this.publisherEmployeeID = publisherEmployeeID;
+        this.publisherName = publisherName;
         this.taskName = taskName;
+        this.bounty = bounty;
         this.publishTime = publishTime;
         this.taskStatus = taskStatus;
     }
 
-    public int getTaskID() {
-        return taskID;
+    public int getTaskId() {
+        return taskId;
     }
 
     public int getPublisherID() {
         return publisherID;
+    }
+
+    public String getPublisherEmployeeID() {
+        return publisherEmployeeID;
+    }
+
+    public String getPublisherName() {
+        return publisherName;
     }
 
     public String getTaskName() {

@@ -1,11 +1,10 @@
 package com.business.exchange.model;
 
 import com.business.exchange.domain.Business;
-import com.business.exchange.model.Response;
 
 import java.util.List;
 
-public class BusinessResponse extends Response {
+public class BusinessResponse extends BaseResponse {
 
     private List<Business> businesses;
 

@@ -1,21 +1,19 @@
 package com.business.exchange.controller;
 
 import com.business.exchange.constant.RespDefine;
-import com.business.exchange.domain.*;
+import com.business.exchange.domain.User;
 import com.business.exchange.model.*;
-import com.business.exchange.service.BusinessService;
 import com.business.exchange.service.UserService;
 import com.business.exchange.utils.CurrencyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.task.TaskDecorator;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.business.exchange.constant.UserConstants.*;
 
@@ -35,26 +33,22 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private BusinessService businessService;
-
     /**
      * 登录(增加了produces反而接口出错，后续分析)
-     * @param user User
+     * @param loginModel 登录信息
      * @param session HttpSession
      * @return LoginResponse
      */
     @RequestMapping(value = "login", method = RequestMethod.POST/*, produces = "application/json;charset=UTF-8"*/)
-    public LoginResponse login(@RequestBody User user, HttpSession session) {
-        LOGGER.info("login into...");
+    public LoginResponse login(@RequestBody LoginModel loginModel, HttpSession session) {
         LoginResponse response = new LoginResponse(RespDefine.DESC_LOGIN_ERROR, "");
-        if (null == user || null == user.getEmployeeID() || null == user.getPassword()) {
+        if (null == loginModel || null == loginModel.getEmployeeID() || null == loginModel.getPassword()) {
             LOGGER.error("login invalid.");
             return response;
         }
 
-        String employeeID = user.getEmployeeID();
-        String password = user.getPassword();
+        String employeeID = loginModel.getEmployeeID();
+        String password = loginModel.getPassword();
 
         if (employeeID.isEmpty()
                 || employeeID.length() > EMPLOYEE_ID_MAX_LENGTH
@@ -71,13 +65,30 @@ public class UserController {
             session.setAttribute(SESSION_EMPLOYEE_ID_NAME, employeeID);
             session.setAttribute(SESSION_USER_TYPE_NAME, response.getCurrentAuthority());
         }
-        LOGGER.info("login out...");
+        LOGGER.info("{} login in.", employeeID);
         return response;
+    }
+
+    @RequestMapping(value = "logout", method = RequestMethod.GET)
+    public BaseResponse logout(HttpSession session) {
+        BaseResponse logoutResponse = new BaseResponse(RespDefine.ERR_CODE_LOGOUT_FAILED,
+                RespDefine.ERR_DESC_LOGOUT_FAILED);
+        if (null == session || null == session.getId()) {
+            LOGGER.error("session is null, do not need to logout.");
+            return logoutResponse;
+        }
+
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+        session.removeAttribute(session.getId());
+        session.removeAttribute(SESSION_EMPLOYEE_ID_NAME);
+        session.removeAttribute(SESSION_USER_TYPE_NAME);
+        logoutResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        LOGGER.info("{} logout.", employeeID);
+        return logoutResponse;
     }
 
     @RequestMapping(value = "info", method = RequestMethod.GET)
     public UserProfileResponse getInfo(HttpSession session) {
-        LOGGER.info("info into...");
         UserProfileResponse userInfoResp = new UserProfileResponse(RespDefine.ERR_CODE_GET_USER_INFO_FAILED,
                 RespDefine.ERR_DESC_GET_USER_INFO_FAILED);
         if (null == session) {
@@ -91,76 +102,66 @@ public class UserController {
             return userInfoResp;
         }
 
-        User user = userService.queryUser(employeeID);
-
-        if (null != user.getPassword()) {
-            user.setPassword("");
-        }
-
-        if (null == user.getEmployeeID() || user.getEmployeeID().isEmpty()) {
-            LOGGER.error("user invalid.");
-            return userInfoResp;
-        }
-
-        BusinessResponse businessResponse = businessService.history(user.getUserId(), user.getEmployeeID());
-
-        if (null == businessResponse || null == businessResponse.getBusinesses()) {
-            LOGGER.error("business response error.");
-            return userInfoResp;
-        }
-
-        UserResponse holdRankusers = userService.holdRank();
-        int total = holdRankusers.getUsers().size();
-        int rank = 1;
-        for (User holdRankUser : holdRankusers.getUsers()) {
-            if (holdRankUser.getEmployeeID() != null && user.getEmployeeID().equals(holdRankUser.getEmployeeID())) {
-                break;
-            } else {
-                rank++;
-            }
-        }
-
-        userInfoResp = new UserProfileResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, user, rank, total, businessResponse.getBusinesses().size());
-
-
-        LOGGER.info("info out...");
-        LOGGER.info("info response: {}.", userInfoResp.toString());
+        userInfoResp = userService.info(employeeID);
+        LOGGER.info("get {} info.", employeeID);
         return userInfoResp;
     }
 
+    private static final int DEPARTMENT_MAX_LENGTH = 1000;
+
+    private static final int USER_GROUP_MAX_LENGTH = 500;
+
     /**
      * create one user
-     * @param userName user name
-     * @param employeeID employee id
-     * @param department department
-     * @param group user group
-     * @param currencyNumber user initial currency number
+     * @param user user
      * @return create result
      */
-    @RequestMapping(value = "create", method = RequestMethod.GET)
-    public String create(@RequestParam("userName") String userName,
-                         @RequestParam("employeeID") String employeeID,
-                         @RequestParam("department") String department,
-                         @RequestParam("group") String group,
-                         @RequestParam("currencyNumber") int currencyNumber) {
-        String createStatus = CREATE_FAILED;
+    @RequestMapping(value = "create", method = RequestMethod.POST)
+    public BaseResponse create(@RequestBody(required = true) User user) {
+        BaseResponse createResponse = new BaseResponse(RespDefine.ERR_CODE_USER_CREATE_FAILED,
+                RespDefine.ERR_DESC_USER_CREATE_FAILED);
 
-        if (null == userName || "".equals(userName) || userName.length() > USERNAME_MAX_LENGTH) {
-            LOGGER.error("userName incorrect.");
-        } else if (null == employeeID || "".equals(employeeID) || employeeID.length() > EMPLOYEE_ID_MAX_LENGTH) {
-            LOGGER.error("employeeID incorrect.");
-        } else if (null == department || "".equals(department)) {
-            LOGGER.error("department incorrect.");
-        } else if (null == group || "".equals(group)) {
-            LOGGER.error("group incorrect.");
-        } else if (currencyNumber < 0 || !CurrencyUtils.isValidCurrencyNumber(currencyNumber)) {
-            LOGGER.error("currencyNumber incorrect.");
-        } else {
-            LOGGER.info("params check valid, begin to create.");
-            createStatus = userService.create(userName, employeeID, department, group, currencyNumber);
-            LOGGER.info("create user finished, status is: {}", createStatus);
+        if (null == user
+                || null == user.getUserName()
+                || null == user.getEmployeeID()
+                || null == user.getDepartment()
+                || null == user.getUserGroup()
+                || user.getCurrencyNumber() < 0) {
+            LOGGER.error("user to create is invalid.");
+            return createResponse;
         }
-        return createStatus;
+
+        String userName = user.getUserName();
+        String employeeID = user.getEmployeeID();
+        String department = user.getDepartment();
+        String group = user.getUserGroup();
+        int currencyNumber = user.getCurrencyNumber();
+
+        if (userName.isEmpty() || userName.length() > USERNAME_MAX_LENGTH ) {
+            LOGGER.error("userName is incorrect.");
+            return createResponse;
+        }
+        if (employeeID.isEmpty() || employeeID.length() > EMPLOYEE_ID_MAX_LENGTH) {
+            LOGGER.error("employeeID is incorrect.");
+            return createResponse;
+        }
+        if (department.isEmpty() || department.length() > DEPARTMENT_MAX_LENGTH) {
+            LOGGER.error("department is incorrect.");
+            return createResponse;
+        }
+        if (group.isEmpty() || group.length() > USER_GROUP_MAX_LENGTH) {
+            LOGGER.error("group is incorrect.");
+            return createResponse;
+        }
+        if (!CurrencyUtils.isValidCurrencyNumber(currencyNumber)) {
+            LOGGER.error("currencyNumber is incorrect.");
+            return createResponse;
+        }
+
+        createResponse = userService.create(userName, employeeID, department, group, currencyNumber);
+
+        LOGGER.info("create user {}.", employeeID);
+        return createResponse;
     }
 
 
@@ -186,45 +187,64 @@ public class UserController {
         return "";
     }*/
 
-    @RequestMapping(value = "/password", method = RequestMethod.GET)
-    public Response modifyPassword(@RequestParam("employeeID") String employeeID,
-                                   @RequestParam("oldPwd") String oldPassword,
-                                   @RequestParam("newPwd") String newPassword,
-                                   HttpSession httpSession) {
-        Response pwdResponse = new Response(RespDefine.ERR_CODE_PASSWORD_MODIFY_FAILED,
+    @RequestMapping(value = "/password", method = RequestMethod.POST)
+    public BaseResponse modifyPassword(@RequestBody(required = true) PwdModifiedModel pwdModifiedModel,
+                                   HttpSession session) {
+        BaseResponse pwdResponse = new BaseResponse(RespDefine.ERR_CODE_PASSWORD_MODIFY_FAILED,
                 RespDefine.ERR_DESC_PASSWORD_MODIFY_FAILED);
         //校验session
-        if (null == httpSession
-                || null == httpSession.getAttribute(SESSION_EMPLOYEE_ID_NAME)
-                || httpSession.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
+        if (null == session
+                || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
+                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
             LOGGER.error("current session invalid.");
             return pwdResponse;
         }
-        if (null == employeeID || employeeID.isEmpty() || employeeID.length() > EMPLOYEE_ID_MAX_LENGTH) {
-            LOGGER.error("employeeID incorrect.");
+        //校验参数
+        if (null == pwdModifiedModel
+//                || null == pwdModifiedModel.getEmployeeID()
+                || null == pwdModifiedModel.getOldPassword()
+                || null == pwdModifiedModel.getNewPassword()) {
+            LOGGER.error("password modify params error.");
             return pwdResponse;
         }
-        if (null == oldPassword || oldPassword.isEmpty() || oldPassword.length() > PASSWORD_MAX_LENGTH) {
-            LOGGER.error("old password incorrect.");
+
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+        String oldPassword = pwdModifiedModel.getOldPassword();
+        String newPassword = pwdModifiedModel.getNewPassword();
+
+        if (employeeID.isEmpty() || employeeID.length() > EMPLOYEE_ID_MAX_LENGTH) {
+            LOGGER.error("employeeID is incorrect.");
             return pwdResponse;
         }
-        if (null == newPassword || newPassword.isEmpty() || newPassword.length() > PASSWORD_MAX_LENGTH) {
-            LOGGER.error("new password incorrect.");
+        if (oldPassword.isEmpty() || oldPassword.length() > PASSWORD_MAX_LENGTH) {
+            LOGGER.error("old password is incorrect.");
             return pwdResponse;
         }
+        if (newPassword.isEmpty() || newPassword.length() > PASSWORD_MAX_LENGTH) {
+            LOGGER.error("new password is incorrect.");
+            return pwdResponse;
+        }
+
+        User user = userService.queryUser(employeeID);
+        if (null == user || user.getUserId() <= 0) {
+            LOGGER.error("query user by employeeID {} error.", employeeID);
+            return pwdResponse;
+        }
+
         //修改操作的工号和session工号不一致时，禁止操作
-        if (!httpSession.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().equals(employeeID)) {
+        if (!session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().equals(employeeID)) {
             LOGGER.error("current user session invalid.");
             return pwdResponse;
         }
 
-        pwdResponse = userService.password(employeeID, oldPassword, newPassword);
-
+        pwdResponse = userService.password(user.getUserId(), oldPassword, newPassword);
+        LOGGER.info("set new password for {}.", employeeID);
         return pwdResponse;
     }
 
     @RequestMapping(value = "hold_rank", method = RequestMethod.GET)
     public UserResponse currencyHoldRank() {
+        LOGGER.info("query hold rank.");
         return userService.holdRank();
     }
 }

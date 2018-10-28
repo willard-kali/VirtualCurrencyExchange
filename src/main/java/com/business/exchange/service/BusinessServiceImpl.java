@@ -1,9 +1,12 @@
 package com.business.exchange.service;
 
 import com.business.exchange.constant.RespDefine;
-import com.business.exchange.domain.*;
+import com.business.exchange.domain.Business;
+import com.business.exchange.domain.BusinessRepository;
+import com.business.exchange.domain.User;
+import com.business.exchange.domain.UserRepository;
+import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.BusinessResponse;
-import com.business.exchange.model.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,27 +27,40 @@ public class BusinessServiceImpl implements BusinessService {
     private BusinessRepository businessRepository;
 
     @Override
-    public Response create(String currEmployeeID, String destEmployeeID, String destUserName, int exchangeCurrencyNumber, String exchangeReason) {
-        Response createResponse = new Response(RespDefine.ERR_CODE_EXCHANGE_FAILED, RespDefine.ERR_DESC_EXCHANGE_FAILED);
+    public BaseResponse create(String sessionEmployeeID, String destEmployeeID, String destUserName, int exchangeCurrencyNumber, String exchangeReason) {
+        BaseResponse createResponse = new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_FAILED, RespDefine.ERR_DESC_EXCHANGE_FAILED);
         User destUser = userRepository.findByEmployeeID(destEmployeeID);
-        if (null == destUser.getEmployeeID() || destUser.getEmployeeID().isEmpty()) {
-            LOGGER.error("dest employee is invalid.");
+        if (null == destUser) {
+            LOGGER.error("dest user is invalid.");
+            createResponse = new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_DEST_USER_ERROR,
+                    RespDefine.ERR_DESC_EXCHANGE_DEST_USER_ERROR);
             return createResponse;
         }
 
         if (!destUser.getUserName().equals(destUserName)) {
             LOGGER.error("dest employee id not match username.");
+            createResponse = new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_DEST_NOT_MATCH_ERROR,
+                    RespDefine.ERR_DESC_EXCHANGE_DEST_NOT_MATCH_ERROR);
             return createResponse;
         }
 
-        User currUser = userRepository.findByEmployeeID(currEmployeeID);
-        if (null == currUser.getEmployeeID() || currUser.getEmployeeID().isEmpty()) {
+        User currUser = userRepository.findByEmployeeID(sessionEmployeeID);
+        if (null == currUser || null == currUser.getEmployeeID() || currUser.getEmployeeID().isEmpty()) {
             LOGGER.error("current employee is invalid.");
+            return createResponse;
+        }
+
+        if (currUser.getEmployeeID().equals(destEmployeeID)) {
+            LOGGER.error("src user cannot be equals to dest user.");
+            createResponse = new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_CURRENT_NOT_BE_DEST,
+                    RespDefine.ERR_DESC_EXCHANGE_CURRENT_NOT_BE_DEST);
             return createResponse;
         }
 
         if (currUser.getCurrencyNumber() < exchangeCurrencyNumber) {
             LOGGER.error("currency number not enough to exchange.");
+            createResponse = new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_CURRENCY_NOT_ENOUGH_FAILED,
+                    RespDefine.ERR_DESC_EXCHANGE_CURRENCY_NOT_ENOUGH_FAILED);
             return createResponse;
         }
 
@@ -52,10 +68,12 @@ public class BusinessServiceImpl implements BusinessService {
         destUser.setCurrencyNumber(destUser.getCurrencyNumber() + exchangeCurrencyNumber);
         userRepository.saveAndFlush(currUser);
         userRepository.saveAndFlush(destUser);
+
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         Business business = new Business(currUser.getUserId(), destUser.getUserId(), destUserName, destEmployeeID, timestamp ,exchangeCurrencyNumber, exchangeReason);
         businessRepository.saveAndFlush(business);
-        return new Response(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        createResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        return createResponse;
     }
 
     @Override
@@ -71,22 +89,22 @@ public class BusinessServiceImpl implements BusinessService {
 
     /**
      * 查询交易记录
-     * @param userId 用户ID
      * @param employeeID 用来校验的Session中的工号
      * @return 交易记录列表
      */
     @Override
-    public BusinessResponse history(int userId, String employeeID) {
+    public BusinessResponse history(String employeeID) {
         BusinessResponse historyQueryResp = new BusinessResponse(RespDefine.ERR_CODE_QUERY_HISTORY_BUSINESS_FAILED,
                 RespDefine.ERR_DESC_QUERY_HISTORY_BUSINESS_FAILED);
 
         User user = userRepository.findByEmployeeID(employeeID);
 
-        if (null == user || user.getUserId() != userId) {
+        if (null == user) {
             LOGGER.error("current user's session invalid.");
             return historyQueryResp;
         }
 
+        int userId = user.getUserId();
         List<Business> businesses = businessRepository
                 .findAllBySrcUserIdEqualsOrDestUserIdEqualsOrderByExchangeDateDesc(userId, userId);
 

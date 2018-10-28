@@ -1,11 +1,12 @@
 package com.business.exchange.service;
 
 import com.business.exchange.constant.RespDefine;
+import com.business.exchange.constant.UserConstants;
 import com.business.exchange.controller.UserController;
 import com.business.exchange.domain.*;
+import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.LoginResponse;
-import com.business.exchange.model.Response;
-import com.business.exchange.model.UserQueryResult;
+import com.business.exchange.model.UserProfileResponse;
 import com.business.exchange.model.UserResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static com.business.exchange.constant.UserConstants.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -26,25 +24,104 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private BusinessRepository businessRepository;
+
+    @Autowired
+    private PasswordRepository passwordRepository;
+
     @Override
     public LoginResponse login(String employeeID, String password) {
-        LoginResponse response = new LoginResponse(RespDefine.DESC_LOGIN_ERROR, "");
+        LoginResponse loginResponse = new LoginResponse(RespDefine.DESC_LOGIN_ERROR, "");
         User user = userRepository.findByEmployeeID(employeeID);
         if (null == user) {
-            LOGGER.warn("no valid user from employeeID: {}.", employeeID);
-        } else if (user.getPassword().equals(password)){
-            response = new LoginResponse(RespDefine.DESC_LOGIN_OK, user.getUserType().getValue());
-        } else {
-            LOGGER.error("password incorrect for employeeID: {}.", employeeID);
+            LOGGER.error("no valid user from employeeID: {}.", employeeID);
+            return loginResponse;
         }
-        return response;
+        int userId = user.getUserId();
+
+        Password userPwd = passwordRepository.findByUserId(userId);
+
+        if (null == userPwd) {
+            LOGGER.error("user {} password error.", userId);
+            return loginResponse;
+        }
+
+        if (userPwd.getPassword().equals(password)) {
+            loginResponse = new LoginResponse(RespDefine.DESC_LOGIN_OK, user.getUserType().getValue());
+        } else {
+            LOGGER.error("login password error.");
+        }
+
+        return loginResponse;
     }
 
     @Override
-    public String create(String userName, String employeeID, String department, String group, int currencyNumber) {
+    public UserProfileResponse info(String employeeID) {
+        UserProfileResponse userInfoResp = new UserProfileResponse(RespDefine.ERR_CODE_GET_USER_INFO_FAILED,
+                RespDefine.ERR_DESC_GET_USER_INFO_FAILED);
+        User user = userRepository.findByEmployeeID(employeeID);
+
+        if (null == user.getEmployeeID() || user.getEmployeeID().isEmpty() || user.getUserId() <= 0) {
+            LOGGER.error("user invalid.");
+            return userInfoResp;
+        }
+
+        int userId = user.getUserId();
+
+        List<Business> businessResponse = businessRepository
+                .findAllBySrcUserIdEqualsOrDestUserIdEqualsOrderByExchangeDateDesc(userId, userId);
+
+        if (null == businessResponse) {
+            LOGGER.error("business response error.");
+            return userInfoResp;
+        }
+
+        List<User> ownRankUsers = userRepository.findAll(
+                Sort.by(
+                        Sort.Order.desc("currencyNumber"),
+                        Sort.Order.desc("userId")
+                )
+        );
+
+        int total = ownRankUsers.size();
+        int rank = 1;
+        for (User holdRankUser : ownRankUsers) {
+            if (holdRankUser.getEmployeeID() != null && user.getEmployeeID().equals(holdRankUser.getEmployeeID())) {
+                break;
+            } else {
+                rank++;
+            }
+        }
+
+        userInfoResp = new UserProfileResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS,
+                user, rank, total, businessResponse.size());
+
+        return userInfoResp;
+    }
+
+    @Override
+    public BaseResponse create(String userName, String employeeID, String department, String group, int currencyNumber) {
+        BaseResponse createResponse = new BaseResponse(RespDefine.ERR_CODE_USER_CREATE_FAILED,
+                RespDefine.ERR_DESC_USER_CREATE_FAILED);
+
+        boolean confirmUser = userRepository.existsByEmployeeID(employeeID);
+        LOGGER.debug("confirm user is: {}.", confirmUser);
+        if (confirmUser) {
+            LOGGER.error("employeeID: {} is exist.", employeeID);
+            return createResponse;
+        }
+
         User user = new User(userName, employeeID, department, group, currencyNumber);
-        userRepository.saveAndFlush(user);
-        return CREATE_SUCCESS;
+        User createdUser = userRepository.saveAndFlush(user);
+        int userId = createdUser.getUserId();
+
+        Password pwd = new Password(userId, UserConstants.DEFAULT_PWD);
+        passwordRepository.saveAndFlush(pwd);
+
+        createResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+
+        return createResponse;
     }
 
     /*@Override
@@ -89,30 +166,31 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 用户修改密码
-     * @param employeeID 工号
+     * @param userId 用户ID
      * @param oldPwd 旧密码
      * @param newPwd 新密码
      * @return 修改是否成功
      */
     @Override
-    public Response password(String employeeID, String oldPwd, String newPwd) {
-        Response modifyPwdResponse = new Response(RespDefine.ERR_CODE_PASSWORD_MODIFY_FAILED,
+    public BaseResponse password(int userId, String oldPwd, String newPwd) {
+        BaseResponse modifyPwdResponse = new BaseResponse(RespDefine.ERR_CODE_PASSWORD_MODIFY_FAILED,
                 RespDefine.ERR_DESC_PASSWORD_MODIFY_FAILED);
-        User user = userRepository.findByEmployeeID(employeeID);
-        if (null == user || null == user.getPassword() || user.getPassword().isEmpty()) {
-            LOGGER.error("employeeID is incorrect.");
+        Password pwd = passwordRepository.findByUserId(userId);
+
+        if (null == pwd || null == pwd.getPassword() || pwd.getPassword().isEmpty()) {
+            LOGGER.error("password info for user {} error.", userId);
             return modifyPwdResponse;
         }
 
-        if (user.getPassword().equals(oldPwd)) {
-            user.setPassword(newPwd);
-            userRepository.saveAndFlush(user);
-            modifyPwdResponse = new Response(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
-            return modifyPwdResponse;
+        if (pwd.getPassword().equals(oldPwd)) {
+            pwd.setPassword(newPwd);
+            passwordRepository.saveAndFlush(pwd);
+            modifyPwdResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
         } else {
-            LOGGER.error("old password input incorrect.");
-            return modifyPwdResponse;
+            LOGGER.error("old password input error.");
         }
+
+        return modifyPwdResponse;
     }
 
     /**

@@ -4,7 +4,7 @@ import com.business.exchange.domain.User;
 
 import java.util.List;
 
-public class UserResponse extends Response {
+public class UserResponse extends BaseResponse {
 
     private List<User> users;
 

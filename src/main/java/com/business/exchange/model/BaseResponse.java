@@ -1,14 +1,14 @@
 package com.business.exchange.model;
 
-public class Response {
+public class BaseResponse {
     private int resultCode;
 
     private String errDesc;
 
-    public Response() {
+    public BaseResponse() {
     }
 
-    public Response(int resultCode, String errDesc) {
+    public BaseResponse(int resultCode, String errDesc) {
         this.resultCode = resultCode;
         this.errDesc = errDesc;
     }
@@ -29,11 +29,4 @@ public class Response {
         this.errDesc = errDesc;
     }
 
-    /*@Override
-    public String toString() {
-        return "Response{" +
-                "resultCode=" + resultCode +
-                ", errDesc='" + errDesc + '\'' +
-                '}';
-    }*/
 }

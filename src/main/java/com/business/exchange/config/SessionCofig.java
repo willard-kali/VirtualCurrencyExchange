@@ -2,7 +2,7 @@ package com.business.exchange.config;
 
 import com.alibaba.fastjson.JSON;
 import com.business.exchange.constant.RespDefine;
-import com.business.exchange.model.Response;
+import com.business.exchange.model.BaseResponse;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -20,7 +20,7 @@ public class SessionCofig implements WebMvcConfigurer {
         registry.addInterceptor(new SecurityInterceptor())
                 //排除拦截
                 .excludePathPatterns("/user/login")
-//                .excludePathPatterns("/user/info")
+                .excludePathPatterns("/user/create")
                 .excludePathPatterns("/user/logout")
 
                 //拦截路径
@@ -37,7 +37,7 @@ public class SessionCofig implements WebMvcConfigurer {
                 return true;
             }
             response.getWriter().write(JSON.toJSONString(
-                    new Response(RespDefine.CODE_NEED_LOGIN, RespDefine.DESC_NEED_LOGIN)
+                    new BaseResponse(RespDefine.CODE_NEED_LOGIN, RespDefine.DESC_NEED_LOGIN)
             ));
             return false;
         }

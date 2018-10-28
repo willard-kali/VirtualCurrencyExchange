@@ -5,7 +5,7 @@ import com.business.exchange.domain.Task;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TaskResponse extends Response {
+public class TaskResponse extends BaseResponse {
 
     private List<Task> tasks = new ArrayList<Task>();
 
