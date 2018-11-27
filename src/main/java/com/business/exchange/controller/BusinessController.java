@@ -1,9 +1,13 @@
 package com.business.exchange.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.business.exchange.constant.RespDefine;
 import com.business.exchange.domain.Business;
 import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.BusinessResponse;
+import com.business.exchange.model.Menu;
+import com.business.exchange.model.MenuButton;
 import com.business.exchange.service.BusinessService;
 import com.business.exchange.utils.CurrencyUtils;
 import org.slf4j.Logger;
@@ -15,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.business.exchange.constant.UserConstants.EMPLOYEE_ID_MAX_LENGTH;
 import static com.business.exchange.constant.UserConstants.USERNAME_MAX_LENGTH;
@@ -128,5 +134,52 @@ public class BusinessController {
         historyQueryResponse = businessService.history(employeeID);
         LOGGER.info("query {} exchange history.", employeeID);
         return historyQueryResponse;
+    }
+
+    /**
+     * just for view
+     * @param session
+     * @return
+     */
+    @RequestMapping(value = "menu", method = RequestMethod.GET)
+    public Menu menu(HttpSession session) {
+
+        List<MenuButton> buttons = new ArrayList<MenuButton>();
+        buttons.add(
+                new MenuButton("xxx1", "发起交易", "https://gw.alipayobjects.com/zos/rmsportal/zOsKZmFRdUtvpqCImOVY.png", "转账OKR币给他人", "../form/step-form/info", ""));
+        buttons.add(
+                new MenuButton("xxx2", "发布任务", "https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png", "发布一条OKR币悬赏任务", "../list/table-list", "")
+        );
+        buttons.add(
+                new MenuButton("xxx3", "查看账单", "https://timgsa.baidu.com/timg?image&quality=80&size=b10000_10000&sec=1540308190&di=0739c3f4bbfe477b89ffd1083d2e5291&src=http://pic.weifengke.com/attachments/2/2524/c9dedb70c59694afa4df6948b3c73c2c.jpg", "查看OKR币收入支出历史", "", "")
+        );
+        Menu menu = new Menu(buttons);
+
+        /*String result = "[\n" +
+                "  {\n" +
+                "    id: 'xxx1',\n" +
+                "    title: titles[0],\n" +
+                "    logo: avatars[1],\n" +
+                "    description: '转账OKR币给他人',\n" +
+                "    href: '../form/step-form/info',\n" +
+                "    memberLink: '',\n" +
+                "  },\n" +
+                "  {\n" +
+                "    id: 'xxx2',\n" +
+                "    title: titles[1],\n" +
+                "    logo: avatars[0],\n" +
+                "    description: '发布一条OKR币悬赏任务',\n" +
+                "    href: '../list/table-list',\n" +
+                "    memberLink: '',\n" +
+                "  },\n" +
+                "  {\n" +
+                "    id: 'xxx3',\n" +
+                "    title: titles[2],\n" +
+                "    logo: avatars[2],\n" +
+                "    description: '查看OKR币收入支出历史',\n" +
+                "    href: '',\n" +
+                "    memberLink: '',\n" +
+                "  }]";*/
+        return menu;
     }
 }

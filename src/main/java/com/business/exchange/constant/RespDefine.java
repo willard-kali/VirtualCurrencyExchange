@@ -54,6 +54,9 @@ public class RespDefine {
     public static final int ERR_CODE_EXCHANGE_CURRENT_NOT_BE_DEST = 998037;
     public static final String ERR_DESC_EXCHANGE_CURRENT_NOT_BE_DEST = "dest employeeID must not be current";
 
+    public static final int ERR_CODE_EXCHANGE_CURRENCY_IS_INVALID = 998038;
+    public static final String ERR_DESC_EXCHANGE_CURRENCY_IS_INVALID = "exchange currency number is invalid.";
+
     //task
     public static final int ERR_CODE_TASK_CREATE_FAILED = 998050;
     public static final String ERR_DESC_TASK_CREATE_FAILED = "task create failed";

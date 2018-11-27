@@ -2,21 +2,11 @@ package com.business.exchange.model;
 
 public class PwdModifiedModel {
 
-    private String employeeID;
-
     private String oldPassword;
 
     private String newPassword;
 
     public PwdModifiedModel() {
-    }
-
-    public String getEmployeeID() {
-        return employeeID;
-    }
-
-    public void setEmployeeID(String employeeID) {
-        this.employeeID = employeeID;
     }
 
     public String getOldPassword() {

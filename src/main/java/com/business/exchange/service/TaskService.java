@@ -2,14 +2,15 @@ package com.business.exchange.service;
 
 import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
+import com.business.exchange.model.TasksResponse;
 
 public interface TaskService {
 
-    BaseResponse create(String employeeID, String taskName, int bounty);
+    TaskResponse create(String employeeID, String taskName, int bounty);
 
-    BaseResponse close(int taskId, String employeeID);
+    TaskResponse close(int taskId, String employeeID);
 
-    TaskResponse queryAll();
+    TasksResponse queryAll();
 
-    TaskResponse queryMine(String employeeID);
+    TasksResponse queryMine(String employeeID);
 }

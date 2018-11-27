@@ -2,27 +2,26 @@ package com.business.exchange.model;
 
 import com.business.exchange.domain.Task;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class TaskResponse extends BaseResponse {
+    private Task task = new Task();
 
-    private List<Task> tasks = new ArrayList<Task>();
+    public TaskResponse() {
+    }
 
     public TaskResponse(int resultCode, String errDesc) {
         super(resultCode, errDesc);
     }
 
-    public TaskResponse(int resultCode, String errDesc, List<Task> tasks) {
+    public TaskResponse(int resultCode, String errDesc, Task task) {
         super(resultCode, errDesc);
-        this.tasks = tasks;
+        this.task = task;
     }
 
-    public List<Task> getTasks() {
-        return tasks;
+    public Task getTask() {
+        return task;
     }
 
-    public void setTasks(List<Task> tasks) {
-        this.tasks = tasks;
+    public void setTask(Task task) {
+        this.task = task;
     }
 }

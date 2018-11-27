@@ -12,6 +12,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+/**
+ * 域名的session设置
+ */
 @Configuration
 public class SessionCofig implements WebMvcConfigurer {
 

@@ -201,7 +201,6 @@ public class UserController {
         }
         //校验参数
         if (null == pwdModifiedModel
-//                || null == pwdModifiedModel.getEmployeeID()
                 || null == pwdModifiedModel.getOldPassword()
                 || null == pwdModifiedModel.getNewPassword()) {
             LOGGER.error("password modify params error.");

@@ -7,6 +7,7 @@ import com.business.exchange.domain.User;
 import com.business.exchange.domain.UserRepository;
 import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
+import com.business.exchange.model.TasksResponse;
 import com.business.exchange.model.TaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +39,8 @@ public class TaskServiceImpl implements TaskService {
      * @return 发布状态
      */
     @Override
-    public BaseResponse create(String employeeID, String taskName, int bounty) {
-        BaseResponse createResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_CREATE_FAILED, RespDefine.ERR_DESC_TASK_CREATE_FAILED);
+    public TaskResponse create(String employeeID, String taskName, int bounty) {
+        TaskResponse createResponse = new TaskResponse(RespDefine.ERR_CODE_TASK_CREATE_FAILED, RespDefine.ERR_DESC_TASK_CREATE_FAILED);
         User user = userRepository.findByEmployeeID(employeeID);
 
         //用户信息错误
@@ -64,7 +65,7 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.saveAndFlush(task);
 
-        createResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        createResponse = new TaskResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, task);
 
         return createResponse;
     }
@@ -76,9 +77,9 @@ public class TaskServiceImpl implements TaskService {
      * @return 结果
      */
     @Override
-    public BaseResponse close(int taskId, String employeeID) {
+    public TaskResponse close(int taskId, String employeeID) {
 
-        BaseResponse finishTaskResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_FINISH_FAILED,
+        TaskResponse finishTaskResponse = new TaskResponse(RespDefine.ERR_CODE_TASK_FINISH_FAILED,
                 RespDefine.ERR_DESC_TASK_FINISH_FAILED);
 
         Task task = taskRepository.findByTaskId(taskId);
@@ -106,20 +107,20 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.saveAndFlush(task);
 
-        finishTaskResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
+        finishTaskResponse = new TaskResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, task);
 
         return finishTaskResponse;
     }
 
     @Override
-    public TaskResponse queryAll() {
-        TaskResponse queryAllTaskResponse = new TaskResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
+    public TasksResponse queryAll() {
+        TasksResponse queryAllTaskResponse = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
         List<Task> tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
 
         if (null != tasks) {
-            queryAllTaskResponse = new TaskResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, tasks);
+            queryAllTaskResponse = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, tasks);
         } else {
             LOGGER.error("query all tasks failed.");
         }
@@ -128,8 +129,8 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponse queryMine(String employeeID) {
-        TaskResponse myTaskResp = new TaskResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED, RespDefine.ERR_DESC_TASK_QUERY_FAILED);
+    public TasksResponse queryMine(String employeeID) {
+        TasksResponse myTaskResp = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED, RespDefine.ERR_DESC_TASK_QUERY_FAILED);
         User user = userRepository.findByEmployeeID(employeeID);
         if (null == user || user.getUserId() <= 0) {
             LOGGER.error("current user session is invalid.");
@@ -143,7 +144,7 @@ public class TaskServiceImpl implements TaskService {
             return myTaskResp;
         }
 
-        myTaskResp = new TaskResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, task);
+        myTaskResp = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, task);
 
         return myTaskResp;
     }

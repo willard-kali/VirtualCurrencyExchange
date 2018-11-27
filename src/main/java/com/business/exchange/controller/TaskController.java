@@ -1,11 +1,14 @@
 package com.business.exchange.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.business.exchange.constant.RespDefine;
 import com.business.exchange.constant.UserConstants;
 import com.business.exchange.domain.Task;
 import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
+import com.business.exchange.model.TasksResponse;
 import com.business.exchange.service.TaskService;
+import com.business.exchange.utils.CurrencyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +31,8 @@ public class TaskController {
     private TaskService taskService;
 
     @RequestMapping(value = "create", method = RequestMethod.POST)
-    public BaseResponse create(@RequestBody(required = true) Task task, HttpSession session) {
-        BaseResponse createResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_CREATE_FAILED, RespDefine.ERR_DESC_TASK_CREATE_FAILED);
+    public TaskResponse create(@RequestBody(required = true) Task task, HttpSession session) {
+        TaskResponse createResponse = new TaskResponse(RespDefine.ERR_CODE_TASK_CREATE_FAILED, RespDefine.ERR_DESC_TASK_CREATE_FAILED);
         if (null == task || null == session
                 || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
                 || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
@@ -42,8 +45,16 @@ public class TaskController {
         String taskName = task.getTaskName();
         int bounty = task.getBounty();
 
-        if (employeeID.length() > UserConstants.EMPLOYEE_ID_MAX_LENGTH || null == taskName || taskName.isEmpty() || bounty <= 0) {
+        if (employeeID.length() > UserConstants.EMPLOYEE_ID_MAX_LENGTH
+                || null == taskName || taskName.isEmpty()) {
             LOGGER.error("param invalid.");
+            return createResponse;
+        }
+
+        if (bounty <= 0 || !CurrencyUtils.isValidCurrencyNumber(bounty)) {
+            LOGGER.error("bounty is invalid.");
+            createResponse = new TaskResponse(RespDefine.ERR_CODE_EXCHANGE_CURRENCY_IS_INVALID,
+                    RespDefine.ERR_DESC_EXCHANGE_CURRENCY_IS_INVALID);
             return createResponse;
         }
 
@@ -58,9 +69,11 @@ public class TaskController {
      * @return
      */
     @RequestMapping(value = "close", method = RequestMethod.POST)
-    public BaseResponse close(@RequestBody(required = true) int taskId, HttpSession session) {
-        BaseResponse finishResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_FINISH_FAILED, RespDefine.ERR_DESC_TASK_FINISH_FAILED);
-        if (taskId <= 0 || null == session) {
+    public TaskResponse close(@RequestBody(required = true) String taskId, HttpSession session) {
+        LOGGER.info("input param: {}.", taskId);
+        int taskIdNum = JSON.parseObject(taskId).getInteger("taskId");
+        TaskResponse finishResponse = new TaskResponse(RespDefine.ERR_CODE_TASK_FINISH_FAILED, RespDefine.ERR_DESC_TASK_FINISH_FAILED);
+        if (taskIdNum <= 0 || null == session) {
             LOGGER.error("task id invalid.");
             return finishResponse;
         }
@@ -71,20 +84,20 @@ public class TaskController {
             return finishResponse;
         }
 
-        finishResponse = taskService.close(taskId, employeeID);
+        finishResponse = taskService.close(taskIdNum, employeeID);
         LOGGER.info("close task {}.", taskId);
         return finishResponse;
     }
 
     @RequestMapping(value = "all", method = RequestMethod.GET)
-    public TaskResponse queryAll() {
+    public TasksResponse queryAll() {
         LOGGER.info("query all task.");
         return taskService.queryAll();
     }
 
     @RequestMapping(value = "mine", method = RequestMethod.GET)
-    public TaskResponse queryMine(HttpSession session) {
-        TaskResponse myTaskResp = new TaskResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
+    public TasksResponse queryMine(HttpSession session) {
+        TasksResponse myTaskResp = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
         if (null == session
