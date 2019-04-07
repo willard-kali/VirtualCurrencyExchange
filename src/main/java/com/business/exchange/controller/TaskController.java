@@ -86,11 +86,9 @@ public class TaskController {
     }
 
     @RequestMapping(value = "all", method = RequestMethod.GET)
-    public TasksResponse queryAll(@RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
-                                  @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
-                                  @RequestParam(value = "expression", defaultValue = "") String expression) {
+    public TasksResponse queryAll() {
         LOGGER.info("query all task.");
-        return taskService.queryAll(currentPage, pageSize, expression);
+        return taskService.queryAll();
     }
 
     @RequestMapping(value = "mine", method = RequestMethod.GET)

@@ -15,6 +15,11 @@ public class TasksResponse extends BaseResponse {
         super(resultCode, errDesc);
     }
 
+    public TasksResponse(int resultCode, String errDesc, List<Task> tasks) {
+        super(resultCode, errDesc);
+        this.tasks = tasks;
+    }
+
     public TasksResponse(int resultCode, String errDesc, List<Task> tasks, Pagination pagination) {
         super(resultCode, errDesc);
         this.tasks = tasks;

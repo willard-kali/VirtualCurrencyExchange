@@ -115,30 +115,14 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TasksResponse queryAll(int currentPage, int pageSize, String expression) {
+    public TasksResponse queryAll() {
         TasksResponse queryAllTaskResponse = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
-        List<Task> tasks;
-        if (!expression.isEmpty()) {
-            expression = "%" + expression + "%";
-            tasks = taskRepository.findAllByTaskNameLikeOrderByPublishTimeDesc(expression);
-        } else {
-            tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
-        }
+        List<Task> tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
 
-        Pagination pagination = new Pagination(tasks.size(), pageSize, currentPage);
-
-        int pageBegin = (currentPage - 1) * pageSize;
-        int pageEnd = currentPage * pageSize;
-
-        if (pageEnd > tasks.size()) {
-            pageEnd = tasks.size();
-        }
-        List<Task> pageTasks = tasks.subList(pageBegin, pageEnd);
-
-        if (null != pageTasks) {
-            queryAllTaskResponse = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, pageTasks, pagination);
+        if (null != tasks) {
+            queryAllTaskResponse = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, tasks);
         } else {
             LOGGER.error("query all tasks failed.");
         }
