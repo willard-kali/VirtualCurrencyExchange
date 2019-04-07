@@ -4,17 +4,21 @@ import com.business.exchange.constant.RespDefine;
 import com.business.exchange.constant.UserConstants;
 import com.business.exchange.controller.UserController;
 import com.business.exchange.domain.*;
-import com.business.exchange.model.BaseResponse;
-import com.business.exchange.model.LoginResponse;
-import com.business.exchange.model.UserProfileResponse;
-import com.business.exchange.model.UserResponse;
+import com.business.exchange.model.*;
+import com.business.exchange.utils.ExcelAnalyzer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -148,7 +152,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /*@Override
+    @Override
     public UserQueryResult queryAll() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
@@ -157,7 +161,7 @@ public class UserServiceImpl implements UserService {
         } else {
             return new UserQueryResult(users.size(), users);
         }
-    }*/
+    }
 
     @Override
     public String modify() {
@@ -218,6 +222,57 @@ public class UserServiceImpl implements UserService {
         holdRankUsersResp = new UserResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, ownRankUsers);
 
         return holdRankUsersResp;
+    }
+
+    @Override
+    public boolean importAccounts(MultipartFile okrAccountsExcelFile) {
+        String fileName = okrAccountsExcelFile.getOriginalFilename();
+        if (!fileName.endsWith(".xls") && !fileName.endsWith("xlsx")) {
+            LOGGER.error("import excel file type error, {}.", fileName);
+            return false;
+        }
+        File assetsExcel = new File(fileName);
+        String filePath = null;
+        try {
+            filePath = assetsExcel.getCanonicalPath();
+        } catch (IOException e) {
+            LOGGER.error("io exception: {}.", e);
+            return false;
+        }
+        List<Map<String, String>> okrAccounts = ExcelAnalyzer.analyzer(filePath);
+        List<User> allUsers = userRepository.findAll();
+        Map<String, User> allUsersMap = new HashMap<>();
+        for (User user : allUsers) {
+            if (!user.getEmployeeID().isEmpty()) {
+                allUsersMap.put(user.getEmployeeID(), user);
+            }
+        }
+        List<User> toUpdateUsers = new ArrayList<>();
+        for (Map<String, String> okrAccount : okrAccounts) {
+            String employeeID = okrAccount.get(ExcelAnalyzer.EMPLOYEE_ID_KEY);
+            if (employeeID.isEmpty()) {
+                LOGGER.error("no employeeID row passed.");
+                continue;
+            }
+            int okrNumber = Integer.valueOf(okrAccount.get(ExcelAnalyzer.OKR_NUMBER_KEY));
+            String userName = okrAccount.get(ExcelAnalyzer.USERNAME_KEY);
+            String department = okrAccount.get(ExcelAnalyzer.DEPARTMENT_KEY);
+            String group = okrAccount.get(ExcelAnalyzer.GROUP_KEY);
+
+            if (!allUsersMap.containsKey(employeeID)) {
+                User user = new User(userName, employeeID, department, group, okrNumber);
+                toUpdateUsers.add(user);
+            }
+        }
+        List<User> updatedUsers = userRepository.saveAll(toUpdateUsers);
+        List<Password> toUpdatePwd = new ArrayList<>();
+        for (User user : updatedUsers) {
+            int userId = user.getUserId();
+            Password pwd = new Password(userId, UserConstants.DEFAULT_PWD);
+            toUpdatePwd.add(pwd);
+        }
+        passwordRepository.saveAll(toUpdatePwd);
+        return true;
     }
 
 }

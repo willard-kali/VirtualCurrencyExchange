@@ -14,6 +14,7 @@ public class Business {
     private int exchangeId;
 
     private int srcUserId;
+    private String srcUserName;
     private int destUserId;
     private String destUserName;
     private String destEmployeeID;
@@ -43,6 +44,7 @@ public class Business {
     /**
      *
      * @param srcUserId
+     * @param srcUserName
      * @param destUserId
      * @param destUserName
      * @param destEmployeeID
@@ -50,8 +52,9 @@ public class Business {
      * @param exchangeCurrencyNumber
      * @param exchangeReason
      */
-    public Business(int srcUserId, int destUserId, String destUserName, String destEmployeeID, Timestamp exchangeDate, int exchangeCurrencyNumber, String exchangeReason) {
+    public Business(int srcUserId, String srcUserName, int destUserId, String destUserName, String destEmployeeID, Timestamp exchangeDate, int exchangeCurrencyNumber, String exchangeReason) {
         this.srcUserId = srcUserId;
+        this.srcUserName = srcUserName;
         this.destUserId = destUserId;
         this.destUserName = destUserName;
         this.destEmployeeID = destEmployeeID;
@@ -62,6 +65,10 @@ public class Business {
 
     public int getSrcUserId() {
         return srcUserId;
+    }
+
+    public String getSrcUserName() {
+        return srcUserName;
     }
 
     public int getDestUserId() {

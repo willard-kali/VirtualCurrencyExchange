@@ -5,10 +5,10 @@ import com.business.exchange.domain.Task;
 import com.business.exchange.domain.TaskRepository;
 import com.business.exchange.domain.User;
 import com.business.exchange.domain.UserRepository;
-import com.business.exchange.model.BaseResponse;
+import com.business.exchange.model.Pagination;
 import com.business.exchange.model.TaskResponse;
-import com.business.exchange.model.TasksResponse;
 import com.business.exchange.model.TaskStatus;
+import com.business.exchange.model.TasksResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,8 +60,10 @@ public class TaskServiceImpl implements TaskService {
         }
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        String taskReceiver = "";
 
-        Task task = new Task(user.getUserId(), user.getEmployeeID(), user.getUserName(), taskName, bounty, timestamp, TaskStatus.ONGOING);
+        Task task = new Task(user.getUserId(), user.getEmployeeID(), user.getUserName(),
+                taskName, bounty, timestamp, TaskStatus.ONGOING, taskReceiver);
 
         taskRepository.saveAndFlush(task);
 
@@ -113,14 +115,23 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TasksResponse queryAll() {
+    public TasksResponse queryAll(int currentPage, int pageSize) {
         TasksResponse queryAllTaskResponse = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
         List<Task> tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
+        Pagination pagination = new Pagination(tasks.size(), pageSize, currentPage);
 
-        if (null != tasks) {
-            queryAllTaskResponse = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, tasks);
+        int pageBegin = (currentPage - 1) * pageSize;
+        int pageEnd = currentPage * pageSize;
+
+        if (pageEnd > tasks.size()) {
+            pageEnd = tasks.size();
+        }
+        List<Task> pageTasks = tasks.subList(pageBegin, pageEnd);
+
+        if (null != pageTasks) {
+            queryAllTaskResponse = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, pageTasks, pagination);
         } else {
             LOGGER.error("query all tasks failed.");
         }
@@ -129,7 +140,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TasksResponse queryMine(String employeeID) {
+    public TasksResponse queryMine(int currentPage, int pageSize, String employeeID) {
         TasksResponse myTaskResp = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED, RespDefine.ERR_DESC_TASK_QUERY_FAILED);
         User user = userRepository.findByEmployeeID(employeeID);
         if (null == user || user.getUserId() <= 0) {
@@ -137,16 +148,51 @@ public class TaskServiceImpl implements TaskService {
             return myTaskResp;
         }
 
-        List<Task> task = taskRepository.findByPublisherIDOrderByPublishTimeDesc(user.getUserId());
+        List<Task> tasks = taskRepository.findByPublisherIDOrderByPublishTimeDesc(user.getUserId());
 
-        if (null == task) {
+        int pageBegin = (currentPage - 1) * pageSize;
+        int pageEnd = currentPage * pageSize;
+
+        if (pageEnd > tasks.size()) {
+            pageEnd = tasks.size();
+        }
+        List<Task> pageTasks = tasks.subList(pageBegin, pageEnd);
+
+        if (null == pageTasks) {
             LOGGER.error("task query result null.");
             return myTaskResp;
         }
 
-        myTaskResp = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, task);
+        Pagination pagination = new Pagination(tasks.size(), pageSize, currentPage);
+
+        myTaskResp = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, pageTasks, pagination);
 
         return myTaskResp;
+    }
+
+    @Override
+    public boolean receive(String employeeID, int taskId) {
+        Task task = taskRepository.findByTaskId(taskId);
+        if (null == task) {
+            LOGGER.error("task not exists.");
+            return false;
+        }
+        if (TaskStatus.CLOSED.equals(task.getTaskStatus())) {
+            LOGGER.error("task was already closed.");
+            return false;
+        }
+        String taskReceiver = task.getTaskReceiver();
+        if (taskReceiver.contains(employeeID)) {
+            LOGGER.error("already exists.");
+            return false;
+        }
+        if (taskReceiver.isEmpty()) {
+            task.setTaskReceiver(employeeID);
+        } else {
+            task.setTaskReceiver(taskReceiver + ", " + employeeID);
+        }
+        taskRepository.saveAndFlush(task);
+        return true;
     }
 
 }

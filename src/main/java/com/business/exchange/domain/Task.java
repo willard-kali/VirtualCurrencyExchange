@@ -27,10 +27,12 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus taskStatus;
 
+    private String taskReceiver;
+
     public Task() {
     }
 
-    public Task(int publisherID, String publisherEmployeeID, String publisherName, String taskName, int bounty, Timestamp publishTime, TaskStatus taskStatus) {
+    public Task(int publisherID, String publisherEmployeeID, String publisherName, String taskName, int bounty, Timestamp publishTime, TaskStatus taskStatus, String taskReceiver) {
         this.publisherID = publisherID;
         this.publisherEmployeeID = publisherEmployeeID;
         this.publisherName = publisherName;
@@ -38,6 +40,7 @@ public class Task {
         this.bounty = bounty;
         this.publishTime = publishTime;
         this.taskStatus = taskStatus;
+        this.taskReceiver = taskReceiver;
     }
 
     public int getTaskId() {
@@ -74,5 +77,13 @@ public class Task {
 
     public Timestamp getPublishTime() {
         return publishTime;
+    }
+
+    public String getTaskReceiver() {
+        return taskReceiver;
+    }
+
+    public void setTaskReceiver(String taskReceiver) {
+        this.taskReceiver = taskReceiver;
     }
 }

@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import com.business.exchange.constant.RespDefine;
 import com.business.exchange.constant.UserConstants;
 import com.business.exchange.domain.Task;
-import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
 import com.business.exchange.model.TasksResponse;
 import com.business.exchange.service.TaskService;
@@ -12,10 +11,7 @@ import com.business.exchange.utils.CurrencyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 
@@ -90,13 +86,16 @@ public class TaskController {
     }
 
     @RequestMapping(value = "all", method = RequestMethod.GET)
-    public TasksResponse queryAll() {
+    public TasksResponse queryAll(@RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                  @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
         LOGGER.info("query all task.");
-        return taskService.queryAll();
+        return taskService.queryAll(currentPage, pageSize);
     }
 
     @RequestMapping(value = "mine", method = RequestMethod.GET)
-    public TasksResponse queryMine(HttpSession session) {
+    public TasksResponse queryMine(@RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                   @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+                                   HttpSession session) {
         TasksResponse myTaskResp = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
@@ -109,8 +108,21 @@ public class TaskController {
 
         String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
 
-        myTaskResp = taskService.queryMine(employeeID);
+        myTaskResp = taskService.queryMine(currentPage, pageSize, employeeID);
         LOGGER.info("query mine({}) task.", employeeID);
         return myTaskResp;
+    }
+
+    @RequestMapping(value = "receive", method = RequestMethod.GET)
+    public boolean receive(Integer taskId, HttpSession session) {
+        if (null == session
+                || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
+                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
+            LOGGER.error("current user session error.");
+            return false;
+        }
+
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+        return taskService.receive(employeeID, taskId);
     }
 }

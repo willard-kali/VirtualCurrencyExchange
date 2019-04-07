@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 
@@ -175,11 +176,11 @@ public class UserController {
         return users.toString();
     }*/
 
-    /*@RequestMapping(value = "/query_all", method = RequestMethod.GET)
-    public String getUserInfo(HttpServletRequest request) {
+    @RequestMapping(value = "/query_all", method = RequestMethod.GET)
+    public String getUserInfo() {
         UserQueryResult users = userService.queryAll();
         return users.toString();
-    }*/
+    }
 
     /*@RequestMapping(value = "/modify", method = RequestMethod.GET)
     public String modifyUserInfo(@RequestParam("user") User user) {
@@ -245,5 +246,29 @@ public class UserController {
     public UserResponse currencyHoldRank() {
         LOGGER.info("query hold rank.");
         return userService.holdRank();
+    }
+
+    private static final String ADMIN_EMPLOYEE_ID = "admin";
+
+    @RequestMapping(value = "import_accounts", method = RequestMethod.POST, consumes = "multipart/form-data")
+    public boolean importAccounts(MultipartFile accountsFile, HttpSession session) {
+        LOGGER.info("import accounts.");
+
+        //校验session
+        if (null == session
+                || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
+                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
+            LOGGER.error("current session invalid.");
+            return false;
+        }
+
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+
+        if (!ADMIN_EMPLOYEE_ID.equals(employeeID)) {
+            LOGGER.error("must admin import accounts.");
+            return false;
+        }
+
+        return userService.importAccounts(accountsFile);
     }
 }

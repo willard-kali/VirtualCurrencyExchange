@@ -7,6 +7,7 @@ import com.business.exchange.domain.User;
 import com.business.exchange.domain.UserRepository;
 import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.BusinessResponse;
+import com.business.exchange.model.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,15 +71,10 @@ public class BusinessServiceImpl implements BusinessService {
         userRepository.saveAndFlush(destUser);
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Business business = new Business(currUser.getUserId(), destUser.getUserId(), destUserName, destEmployeeID, timestamp ,exchangeCurrencyNumber, exchangeReason);
+        Business business = new Business(currUser.getUserId(), currUser.getUserName(), destUser.getUserId(), destUserName, destEmployeeID, timestamp ,exchangeCurrencyNumber, exchangeReason);
         businessRepository.saveAndFlush(business);
         createResponse = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
         return createResponse;
-    }
-
-    @Override
-    public String assign() {
-        return null;
     }
 
     @Override
@@ -93,7 +89,7 @@ public class BusinessServiceImpl implements BusinessService {
      * @return 交易记录列表
      */
     @Override
-    public BusinessResponse history(String employeeID) {
+    public BusinessResponse history(int currentPage, int pageSize, String employeeID) {
         BusinessResponse historyQueryResp = new BusinessResponse(RespDefine.ERR_CODE_QUERY_HISTORY_BUSINESS_FAILED,
                 RespDefine.ERR_DESC_QUERY_HISTORY_BUSINESS_FAILED);
 
@@ -108,13 +104,53 @@ public class BusinessServiceImpl implements BusinessService {
         List<Business> businesses = businessRepository
                 .findAllBySrcUserIdEqualsOrDestUserIdEqualsOrderByExchangeDateDesc(userId, userId);
 
-        if (null == businesses) {
+        Pagination pagination = new Pagination(businesses.size(), pageSize, currentPage);
+
+        int pageBegin = (currentPage - 1) * pageSize;
+        int pageEnd = currentPage * pageSize;
+
+        if (pageEnd > businesses.size()) {
+            pageEnd = businesses.size();
+        }
+        List<Business> pageBusinesses = businesses.subList(pageBegin, pageEnd);
+
+        if (null == pageBusinesses) {
             LOGGER.error("no exchange history to record.");
             return historyQueryResp;
         }
 
-        historyQueryResp = new BusinessResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, businesses);
+        historyQueryResp = new BusinessResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, pageBusinesses, pagination);
 
         return historyQueryResp;
+    }
+
+    @Override
+    public boolean assign(List<String> employeeIDs, int okrAssignNumber, String assignDesc) {
+
+        for (String employeeID : employeeIDs) {
+            if (employeeID.isEmpty() || !userRepository.existsByEmployeeID(employeeID)) {
+                LOGGER.error("employeeID: {} not exist.", employeeID);
+                return false;
+            }
+        }
+        User adminUser = userRepository.findByEmployeeID("admin");
+
+        for (String employeeID: employeeIDs) {
+            User user = userRepository.findByEmployeeID(employeeID);
+            user.setCurrencyNumber(user.getCurrencyNumber() + okrAssignNumber);
+            userRepository.saveAndFlush(user);
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            Business business = new Business(
+                    adminUser.getUserId(),
+                    adminUser.getUserName(),
+                    user.getUserId(),
+                    user.getUserName(),
+                    user.getEmployeeID(),
+                    timestamp,
+                    okrAssignNumber,
+                    assignDesc);
+            businessRepository.saveAndFlush(business);
+        }
+        return true;
     }
 }

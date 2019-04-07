@@ -1,6 +1,5 @@
 package com.business.exchange.service;
 
-import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
 import com.business.exchange.model.TasksResponse;
 
@@ -10,7 +9,9 @@ public interface TaskService {
 
     TaskResponse close(int taskId, String employeeID);
 
-    TasksResponse queryAll();
+    TasksResponse queryAll(int currentPage, int pageSize);
 
-    TasksResponse queryMine(String employeeID);
+    TasksResponse queryMine(int currentPage, int pageSize, String employeeID);
+
+    boolean receive(String employeeID, int taskId);
 }

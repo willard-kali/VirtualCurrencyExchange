@@ -1,10 +1,8 @@
 package com.business.exchange.service;
 
 import com.business.exchange.domain.User;
-import com.business.exchange.model.BaseResponse;
-import com.business.exchange.model.LoginResponse;
-import com.business.exchange.model.UserProfileResponse;
-import com.business.exchange.model.UserResponse;
+import com.business.exchange.model.*;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
 
@@ -18,11 +16,13 @@ public interface UserService {
 
     User queryUser(String employeeID);
 
-//    UserQueryResult queryAll();
+    UserQueryResult queryAll();
 
     String modify();
 
     BaseResponse password(int userId, String oldPwd, String newPwd);
 
     UserResponse holdRank();
+
+    boolean importAccounts(MultipartFile okrAccountsExcelFile);
 }
