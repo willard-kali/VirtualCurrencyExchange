@@ -9,9 +9,9 @@ public interface TaskService {
 
     TaskResponse close(int taskId, String employeeID);
 
-    TasksResponse queryAll(int currentPage, int pageSize);
+    TasksResponse queryAll(int currentPage, int pageSize, String expression);
 
-    TasksResponse queryMine(int currentPage, int pageSize, String employeeID);
+    TasksResponse queryMine(int currentPage, int pageSize, String employeeID, String expression);
 
     boolean receive(String employeeID, int taskId);
 }

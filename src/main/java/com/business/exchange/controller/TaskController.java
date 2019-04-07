@@ -87,14 +87,16 @@ public class TaskController {
 
     @RequestMapping(value = "all", method = RequestMethod.GET)
     public TasksResponse queryAll(@RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
-                                  @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+                                  @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+                                  @RequestParam(value = "expression", defaultValue = "") String expression) {
         LOGGER.info("query all task.");
-        return taskService.queryAll(currentPage, pageSize);
+        return taskService.queryAll(currentPage, pageSize, expression);
     }
 
     @RequestMapping(value = "mine", method = RequestMethod.GET)
     public TasksResponse queryMine(@RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
                                    @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+                                   @RequestParam(value = "expression", defaultValue = "") String expression,
                                    HttpSession session) {
         TasksResponse myTaskResp = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
@@ -108,7 +110,7 @@ public class TaskController {
 
         String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
 
-        myTaskResp = taskService.queryMine(currentPage, pageSize, employeeID);
+        myTaskResp = taskService.queryMine(currentPage, pageSize, employeeID, expression);
         LOGGER.info("query mine({}) task.", employeeID);
         return myTaskResp;
     }

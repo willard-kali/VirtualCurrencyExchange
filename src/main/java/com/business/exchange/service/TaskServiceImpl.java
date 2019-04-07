@@ -115,11 +115,18 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TasksResponse queryAll(int currentPage, int pageSize) {
+    public TasksResponse queryAll(int currentPage, int pageSize, String expression) {
         TasksResponse queryAllTaskResponse = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
-        List<Task> tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
+        List<Task> tasks;
+        if (!expression.isEmpty()) {
+            expression = "%" + expression + "%";
+            tasks = taskRepository.findAllByTaskNameLikeOrderByPublishTimeDesc(expression);
+        } else {
+            tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
+        }
+
         Pagination pagination = new Pagination(tasks.size(), pageSize, currentPage);
 
         int pageBegin = (currentPage - 1) * pageSize;
@@ -140,7 +147,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TasksResponse queryMine(int currentPage, int pageSize, String employeeID) {
+    public TasksResponse queryMine(int currentPage, int pageSize, String employeeID, String expression) {
         TasksResponse myTaskResp = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED, RespDefine.ERR_DESC_TASK_QUERY_FAILED);
         User user = userRepository.findByEmployeeID(employeeID);
         if (null == user || user.getUserId() <= 0) {
@@ -148,7 +155,13 @@ public class TaskServiceImpl implements TaskService {
             return myTaskResp;
         }
 
-        List<Task> tasks = taskRepository.findByPublisherIDOrderByPublishTimeDesc(user.getUserId());
+        List<Task> tasks;
+        if (!expression.isEmpty()) {
+            expression = "%" + expression + "%";
+            tasks = taskRepository.findByPublisherIDAndTaskNameIsLikeOrderByPublishTimeDesc(user.getUserId(), expression);
+        } else {
+            tasks = taskRepository.findByPublisherIDOrderByPublishTimeDesc(user.getUserId());
+        }
 
         int pageBegin = (currentPage - 1) * pageSize;
         int pageEnd = currentPage * pageSize;
