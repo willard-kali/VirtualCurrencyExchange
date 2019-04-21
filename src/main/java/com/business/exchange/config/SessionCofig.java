@@ -29,6 +29,7 @@ public class SessionCofig implements WebMvcConfigurer {
                 .excludePathPatterns("/user/create")
                 .excludePathPatterns("/user/logout")
                 .excludePathPatterns("/user/import_accounts")
+                .excludePathPatterns("/exchange/export_bill")
 
                 //拦截路径
                 .addPathPatterns("/**");

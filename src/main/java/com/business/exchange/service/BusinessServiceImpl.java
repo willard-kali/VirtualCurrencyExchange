@@ -8,19 +8,34 @@ import com.business.exchange.domain.UserRepository;
 import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.BusinessResponse;
 import com.business.exchange.model.Pagination;
+import com.business.exchange.model.UserType;
+import com.business.exchange.utils.ExcelAnalyzer;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 public class BusinessServiceImpl implements BusinessService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BusinessServiceImpl.class);
+
+    //账单名称
+    private static final String BILL_NAME = "账单";
+
+
+    @Value(value = "#{${excel.title.mapping}}")
+    private Map<String, String> excelTitleMapping;
 
     @Autowired
     private UserRepository userRepository;
@@ -159,13 +174,16 @@ public class BusinessServiceImpl implements BusinessService {
     }
 
     @Override
-    public BaseResponse assignAll(int exchangeCurrencyNumber, String assignDesc) {
+    public BaseResponse assignAll(String employeeID, int exchangeCurrencyNumber, String assignDesc) {
         List<User> allUsers = userRepository.findAll();
-        User adminUser = userRepository.findByEmployeeID("admin");
+        User adminUser = userRepository.findByEmployeeID(employeeID);
 
         List<User> toUpdateUsers = new ArrayList<>();
         List<Business> toUpdateBusinesses = new ArrayList<>();
         for (User user : allUsers) {
+            if (employeeID.equals(user.getEmployeeID())) {
+                continue;
+            }
             user.setCurrencyNumber(user.getCurrencyNumber() + exchangeCurrencyNumber);
             toUpdateUsers.add(user);
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -184,4 +202,73 @@ public class BusinessServiceImpl implements BusinessService {
         businessRepository.saveAll(toUpdateBusinesses);
         return new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
     }
+
+    @Override
+    public File exportExchangeBill(String employeeID) {
+        List<Business> businesses = null;
+        User user = userRepository.findByEmployeeID(employeeID);
+        //如果是管理员用户，下载全部账单
+        if (UserType.ADMIN_USER.equals(user.getUserType())) {
+            businesses = businessRepository.findAllByOrderByExchangeDateDesc();
+        } else {
+            //如果是普通用户，下载个人账单
+            int userId = user.getUserId();
+            businesses = businessRepository.findAllBySrcUserIdEqualsOrDestUserIdEqualsOrderByExchangeDateDesc(userId, userId);
+        }
+        //获取要导出的账单表头字段
+        Set<String> titles = excelTitleMapping.keySet();
+        String[] titleArray = new String[excelTitleMapping.size()];
+        int index = 0;
+        //获取表头字段的中文翻译
+        for (String titleKey : titles) {
+            titleArray[index] = excelTitleMapping.get(titleKey);
+            index++;
+        }
+        //导出时间
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String today = now.format(format);
+        HSSFWorkbook excel = null;
+        File file = new File(BILL_NAME + "-" + employeeID + "-" + today + ".xlsx");
+        try {
+            //生成要导出的Excel，包含数据
+            excel = ExcelAnalyzer.getHSSFWorkbook(
+                    BILL_NAME,
+                    titleArray,
+                    buildBill(businesses)
+            );
+            excel.write(file);
+            LOGGER.info("create excel succeed.");
+            return file;
+        } catch (Exception e) {
+            LOGGER.error("{} exception: {}.",e.getClass().getName(), e);
+            return file;
+        }
+    }
+
+    /**
+     * 生成账单
+     * @param businesses 交易记录
+     * @return
+     */
+    private String[][] buildBill(List<Business> businesses) throws NoSuchFieldException, IllegalAccessException {
+        int columnNumber = excelTitleMapping.size();
+        int rowNumber = businesses.size();
+        String[][] bills = new String[rowNumber][columnNumber];
+        int i = 0;
+        for (Business business : businesses) {
+            int j = 0;
+            for (String titleName : excelTitleMapping.keySet()) {
+                Class<?> clazz = business.getClass();
+                Field field = clazz.getDeclaredField(titleName);
+                field.setAccessible(true);
+                Object value = field.get(business);
+                bills[i][j] = value.toString();
+                j++;
+            }
+            i++;
+        }
+        return bills;
+    }
+
 }

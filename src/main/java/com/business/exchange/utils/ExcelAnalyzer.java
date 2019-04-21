@@ -1,6 +1,6 @@
 package com.business.exchange.utils;
 
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -13,6 +13,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Excel 解析工具，支持生成Excel、导出为Excel
+ */
 public class ExcelAnalyzer {
 
     public static final String EMPLOYEE_ID_KEY = "employeeID";
@@ -32,6 +35,15 @@ public class ExcelAnalyzer {
 
     private static final int MAX_ROW = 10000;
 
+    //导出表格的列宽
+    private static final int COLUMN_WIDTH = 10;
+
+    /**
+     * 解析Excel中的信息
+     *
+     * @param filePath
+     * @return
+     */
     public static List<Map<String, String>> analyzer(String filePath) {
         Workbook wb = null;
         Sheet sheet = null;
@@ -169,4 +181,50 @@ public class ExcelAnalyzer {
         return cellValue;
     }
 
+    /**
+     * 导出Excel
+     *
+     * @param sheetName sheet名称
+     * @param title     标题
+     * @param values    内容
+     * @return
+     */
+    public static HSSFWorkbook getHSSFWorkbook(String sheetName, String[] title, String[][] values) {
+
+        // 第一步，创建一个HSSFWorkbook，对应一个Excel文件
+        HSSFWorkbook wb = new HSSFWorkbook();
+
+        // 第二步，在workbook中添加一个sheet,对应Excel文件中的sheet
+        HSSFSheet sheet = wb.createSheet(sheetName);
+        sheet.setDefaultColumnWidth(COLUMN_WIDTH);
+
+        // 第三步，在sheet中添加表头第0行,注意老版本poi对Excel的行数列数有限制
+        HSSFRow row = sheet.createRow(0);
+
+        // 第四步，创建单元格，并设置值表头 设置表头居中
+        HSSFCellStyle style = wb.createCellStyle();
+        style.setAlignment(HorizontalAlignment.CENTER); // 创建一个居中格式
+
+        //声明列对象
+        HSSFCell cell = null;
+
+        //创建标题
+        for (int i = 0; i < title.length; i++) {
+            cell = row.createCell(i);
+            cell.setCellValue(title[i]);
+            cell.setCellStyle(style);
+        }
+
+        //创建内容
+        for (int i = 0; i < values.length; i++) {
+            row = sheet.createRow(i + 1);
+            for (int j = 0; j < values[i].length; j++) {
+                //将内容按顺序赋给对应的列对象
+                cell = row.createCell(j);
+                cell.setCellValue(values[i][j]);
+                cell.setCellStyle(style);
+            }
+        }
+        return wb;
+    }
 }

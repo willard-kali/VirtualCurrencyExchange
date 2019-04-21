@@ -5,12 +5,19 @@ import com.business.exchange.domain.Business;
 import com.business.exchange.model.*;
 import com.business.exchange.service.BusinessService;
 import com.business.exchange.utils.CurrencyUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,11 +37,13 @@ public class BusinessController {
 
     private static final int ASSIGN_MAX_MONEY = 1000;
 
+    private static final String SESSION_USER_TYPE_NAME = "type";
+
     @Autowired
     private BusinessService businessService;
 
     /**
-     * 交易
+     * 发起交易
      * @param business 交易信息
      * @return 交易是否成功
      */
@@ -95,7 +104,13 @@ public class BusinessController {
         return createResponse;
     }
 
-    //统一新增okr币
+    /**
+     * 给指定员工新增okr币
+     * @param employeeIDs 员工ID集合
+     * @param exchangeCurrencyNumber 新增数量
+     * @param assignDesc 新增描述
+     * @return
+     */
     @RequestMapping(value = "assign", method = RequestMethod.GET)
     public BaseResponse assign(List<String> employeeIDs, int exchangeCurrencyNumber, String assignDesc) {
 
@@ -111,19 +126,23 @@ public class BusinessController {
         return businessService.assign(employeeIDs, exchangeCurrencyNumber, assignDesc);
     }
 
-    private static final String ADMIN_EMPLOYEE_ID = "admin";
-
-    //统一新增okr币
+    /**
+     * 统一新增okr币
+     * @param assignRequest 统一新增数量及描述
+     * @param session session
+     * @return
+     */
     @RequestMapping(value = "assignall", method = RequestMethod.POST)
     public BaseResponse assignAll(@RequestBody AssignRequest assignRequest, HttpSession session) {
 
         if (null == session || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
                 || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()
-                || !ADMIN_EMPLOYEE_ID.equals(session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString())) {
+                || !UserType.ADMIN_USER.getValue().equals(session.getAttribute(SESSION_USER_TYPE_NAME).toString())) {
             LOGGER.error("current user session invalid.");
             return new BaseResponse(RespDefine.ERR_CODE_USER_INVALID_ASSIGN_FAILED,
                     RespDefine.ERR_DESC_USER_INVALID_ASSIGN_FAILED);
         }
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
 
         if (null == assignRequest
                 || null == assignRequest.getAssignDesc()
@@ -135,7 +154,7 @@ public class BusinessController {
         }
 
         LOGGER.info("assign all by admin.");
-        return businessService.assignAll(assignRequest.getExchangeCurrencyNumber(), assignRequest.getAssignDesc());
+        return businessService.assignAll(employeeID, assignRequest.getExchangeCurrencyNumber(), assignRequest.getAssignDesc());
     }
 
     //todo
@@ -147,6 +166,13 @@ public class BusinessController {
 
     private static final String SESSION_EMPLOYEE_ID_NAME = "employeeID";
 
+    /**
+     * 查询交易记录
+     * @param currentPage 当前页
+     * @param pageSize 页大小
+     * @param session session
+     * @return
+     */
     @RequestMapping(value = "history", method = RequestMethod.GET)
     public BusinessResponse exchangeHistory(@RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
                                             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
@@ -165,6 +191,45 @@ public class BusinessController {
         historyQueryResponse = businessService.history(currentPage, pageSize, employeeID);
         LOGGER.info("query {} exchange history.", employeeID);
         return historyQueryResponse;
+    }
+
+    /**
+     * 导出账单
+     * @param session session
+     */
+    @RequestMapping(value = "export_bill", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> exportExchangeBill(HttpSession session) {
+        //TODO
+        if (null == session || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
+                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
+            LOGGER.error("current user session invalid.");
+            return null;
+        }
+
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+//        String employeeID = "admin";
+        File file = businessService.exportExchangeBill(employeeID);
+
+        String fileName = null;
+        try {
+            fileName = new String(file.getName().getBytes("utf-8"),"ISO-8859-1");
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.error("unsupported encoding exception: {}.", e);
+            return null;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDispositionFormData("attachment", fileName);
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        ResponseEntity<byte[]> billFile = null;
+        try {
+            billFile = new ResponseEntity<byte[]>(FileUtils.readFileToByteArray(file), headers, HttpStatus.OK);
+        } catch (IOException e) {
+            LOGGER.error("io exception: {}.", e);
+            return null;
+        }
+        LOGGER.info("export {} bill finished.", employeeID);
+        return billFile;
     }
 
     /**
