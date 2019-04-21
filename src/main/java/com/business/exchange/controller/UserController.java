@@ -176,10 +176,10 @@ public class UserController {
         return users.toString();
     }*/
 
-    @RequestMapping(value = "/query_all", method = RequestMethod.GET)
-    public String getUserInfo() {
+    @RequestMapping(value = "/queryall", method = RequestMethod.GET)
+    public UserQueryResult getUserInfo() {
         UserQueryResult users = userService.queryAll();
-        return users.toString();
+        return users;
     }
 
     /*@RequestMapping(value = "/modify", method = RequestMethod.GET)
@@ -251,24 +251,8 @@ public class UserController {
     private static final String ADMIN_EMPLOYEE_ID = "admin";
 
     @RequestMapping(value = "import_accounts", method = RequestMethod.POST, consumes = "multipart/form-data")
-    public boolean importAccounts(MultipartFile accountsFile, HttpSession session) {
+    public BaseResponse importAccounts(MultipartFile accountsFile) {
         LOGGER.info("import accounts.");
-
-        //校验session
-        if (null == session
-                || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
-                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
-            LOGGER.error("current session invalid.");
-            return false;
-        }
-
-        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
-
-        if (!ADMIN_EMPLOYEE_ID.equals(employeeID)) {
-            LOGGER.error("must admin import accounts.");
-            return false;
-        }
-
         return userService.importAccounts(accountsFile);
     }
 }

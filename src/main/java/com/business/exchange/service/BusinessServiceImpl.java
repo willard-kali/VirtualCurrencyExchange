@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -125,14 +126,17 @@ public class BusinessServiceImpl implements BusinessService {
     }
 
     @Override
-    public boolean assign(List<String> employeeIDs, int okrAssignNumber, String assignDesc) {
-
+    public BaseResponse assign(List<String> employeeIDs, int okrAssignNumber, String assignDesc) {
+        BaseResponse assignResp = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
         for (String employeeID : employeeIDs) {
             if (employeeID.isEmpty() || !userRepository.existsByEmployeeID(employeeID)) {
                 LOGGER.error("employeeID: {} not exist.", employeeID);
-                return false;
+                assignResp = new BaseResponse(RespDefine.ERR_CODE_BUSINESS_ASSIGN_EMPLOYEE_NOT_EXIST_FAILED,
+                        RespDefine.ERR_DESC_BUSINESS_ASSIGN_EMPLOYEE_NOT_EXIST_FAILED);
+                return assignResp;
             }
         }
+
         User adminUser = userRepository.findByEmployeeID("admin");
 
         for (String employeeID: employeeIDs) {
@@ -151,6 +155,33 @@ public class BusinessServiceImpl implements BusinessService {
                     assignDesc);
             businessRepository.saveAndFlush(business);
         }
-        return true;
+        return assignResp;
+    }
+
+    @Override
+    public BaseResponse assignAll(int exchangeCurrencyNumber, String assignDesc) {
+        List<User> allUsers = userRepository.findAll();
+        User adminUser = userRepository.findByEmployeeID("admin");
+
+        List<User> toUpdateUsers = new ArrayList<>();
+        List<Business> toUpdateBusinesses = new ArrayList<>();
+        for (User user : allUsers) {
+            user.setCurrencyNumber(user.getCurrencyNumber() + exchangeCurrencyNumber);
+            toUpdateUsers.add(user);
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            Business business = new Business(
+                    adminUser.getUserId(),
+                    adminUser.getUserName(),
+                    user.getUserId(),
+                    user.getUserName(),
+                    user.getEmployeeID(),
+                    timestamp,
+                    exchangeCurrencyNumber,
+                    assignDesc);
+            toUpdateBusinesses.add(business);
+        }
+        userRepository.saveAll(toUpdateUsers);
+        businessRepository.saveAll(toUpdateBusinesses);
+        return new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
     }
 }

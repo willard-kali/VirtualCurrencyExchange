@@ -5,14 +5,10 @@ import com.business.exchange.domain.Task;
 import com.business.exchange.domain.TaskRepository;
 import com.business.exchange.domain.User;
 import com.business.exchange.domain.UserRepository;
-import com.business.exchange.model.Pagination;
-import com.business.exchange.model.TaskResponse;
-import com.business.exchange.model.TaskStatus;
-import com.business.exchange.model.TasksResponse;
+import com.business.exchange.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -119,8 +115,7 @@ public class TaskServiceImpl implements TaskService {
         TasksResponse queryAllTaskResponse = new TasksResponse(RespDefine.ERR_CODE_TASK_QUERY_FAILED,
                 RespDefine.ERR_DESC_TASK_QUERY_FAILED);
 
-        List<Task> tasks = taskRepository.findAll(Sort.by(Sort.Order.desc(PUBLISH_TIME_NAME)));
-
+        List<Task> tasks = taskRepository.findAllByTaskStatusEqualsOrderByPublishTimeDesc(TaskStatus.ONGOING);
         if (null != tasks) {
             queryAllTaskResponse = new TasksResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, tasks);
         } else {
@@ -168,28 +163,28 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public boolean receive(String employeeID, int taskId) {
+    public BaseResponse receive(String employeeID, int taskId) {
+        BaseResponse receiveResp = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
         Task task = taskRepository.findByTaskId(taskId);
         if (null == task) {
             LOGGER.error("task not exists.");
-            return false;
+            receiveResp = new BaseResponse(RespDefine.ERR_CODE_TASK_NOT_EXIST_FAILED, RespDefine.ERR_DESC_TASK_NOT_EXIST_FAILED);
+            return receiveResp;
         }
         if (TaskStatus.CLOSED.equals(task.getTaskStatus())) {
             LOGGER.error("task was already closed.");
-            return false;
+            receiveResp = new BaseResponse(RespDefine.ERR_CODE_TASK_ALREADY_CLOSED_FAILED, RespDefine.ERR_DESC_TASK_ALREADY_CLOSED_FAILED);
+            return receiveResp;
         }
         String taskReceiver = task.getTaskReceiver();
-        if (taskReceiver.contains(employeeID)) {
-            LOGGER.error("already exists.");
-            return false;
-        }
-        if (taskReceiver.isEmpty()) {
-            task.setTaskReceiver(employeeID);
+        if (!taskReceiver.isEmpty()) {
+            LOGGER.error("task already received.");
+            receiveResp = new BaseResponse(RespDefine.ERR_CODE_TASK_ALREADY_RECEIVED_FAILED, RespDefine.ERR_DESC_TASK_ALREADY_RECEIVED_FAILED);
+            return receiveResp;
         } else {
-            task.setTaskReceiver(taskReceiver + ", " + employeeID);
+            task.setTaskReceiver(employeeID);
+            taskRepository.saveAndFlush(task);
+            return receiveResp;
         }
-        taskRepository.saveAndFlush(task);
-        return true;
     }
-
 }

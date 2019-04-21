@@ -61,25 +61,32 @@ public class ExcelAnalyzer {
             int departmentColumnNumber = -1;
             int groupColumnNumber = -1;
 
+            if (row != null) {
+                for (int j = 0; j < column; j++) {
+                    cellData = (String) getCellFormatValue(row.getCell(j));
+                    System.out.println("cell data: " + cellData);
+                    //判断各个属性所在列
+                    if (EMPLOYEE_ID_COLUMN_NAME.equals(cellData) || cellData.contains(EMPLOYEE_ID_COLUMN_NAME)) {
+                        employeeIDColumnNumber = j;
+                    } else if (OKR_NUMBER_COLUMN_NAME.equals(cellData) || cellData.contains(OKR_NUMBER_COLUMN_NAME)) {
+                        okrNumberColumnNumber = j;
+                    } else if (USERNAME_COLUMN_NAME.equals(cellData) || cellData.contains(USERNAME_COLUMN_NAME)) {
+                        userNameColumnNumber = j;
+                    } else if (DEPARTMENT_COLUMN_NAME.equals(cellData) || cellData.contains(DEPARTMENT_COLUMN_NAME)) {
+                        departmentColumnNumber = j;
+                    } else if (GROUP_COLUMN_NAME.equals(cellData) || cellData.contains(GROUP_COLUMN_NAME)) {
+                        groupColumnNumber = j;
+                    }
+                }
+            }
+
             for (int i = 1; i < rowNumber; i++) {
                 Map<String, String> map = new LinkedHashMap<String, String>();
                 row = sheet.getRow(i);
                 if (row != null) {
                     for (int j = 0; j < column; j++) {
                         cellData = (String) getCellFormatValue(row.getCell(j));
-
-                        //判断各个属性所在列
-                        if (EMPLOYEE_ID_COLUMN_NAME.equals(cellData)) {
-                            employeeIDColumnNumber = j;
-                        } else if (OKR_NUMBER_COLUMN_NAME.equals(cellData)) {
-                            okrNumberColumnNumber = j;
-                        } else if (USERNAME_COLUMN_NAME.equals(cellData)) {
-                            userNameColumnNumber = j;
-                        } else if (DEPARTMENT_COLUMN_NAME.equals(cellData)) {
-                            departmentColumnNumber = j;
-                        } else if (GROUP_COLUMN_NAME.equals(cellData)) {
-                            groupColumnNumber = j;
-                        }
+                        System.out.println("cell data: " + cellData);
 
                         //将对应列属性值提取到Map中
                         if (j == employeeIDColumnNumber) {

@@ -2,10 +2,7 @@ package com.business.exchange.controller;
 
 import com.business.exchange.constant.RespDefine;
 import com.business.exchange.domain.Business;
-import com.business.exchange.model.BaseResponse;
-import com.business.exchange.model.BusinessResponse;
-import com.business.exchange.model.Menu;
-import com.business.exchange.model.MenuButton;
+import com.business.exchange.model.*;
 import com.business.exchange.service.BusinessService;
 import com.business.exchange.utils.CurrencyUtils;
 import org.slf4j.Logger;
@@ -30,6 +27,8 @@ public class BusinessController {
     private static final Logger LOGGER = LoggerFactory.getLogger(BusinessController.class);
 
     private static final int EXCHANGE_REASON_MAX_LENGTH = 1000;
+
+    private static final int ASSIGN_MAX_MONEY = 1000;
 
     @Autowired
     private BusinessService businessService;
@@ -98,11 +97,45 @@ public class BusinessController {
 
     //统一新增okr币
     @RequestMapping(value = "assign", method = RequestMethod.GET)
-    public boolean assign(List<String> employeeIDs, int exchangeCurrencyNumber, String assignDesc) {
+    public BaseResponse assign(List<String> employeeIDs, int exchangeCurrencyNumber, String assignDesc) {
 
-        businessService.assign(employeeIDs, exchangeCurrencyNumber, assignDesc);
-        //todo
-        return false;
+        BaseResponse assignResp = new BaseResponse();
+
+        if (null == employeeIDs || null == assignDesc || exchangeCurrencyNumber <= 0) {
+            LOGGER.error("input param error.");
+            assignResp = new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_PARAM_EMPTY_ERROR,
+                    RespDefine.ERR_DESC_EXCHANGE_PARAM_EMPTY_ERROR);
+            return assignResp;
+        }
+
+        return businessService.assign(employeeIDs, exchangeCurrencyNumber, assignDesc);
+    }
+
+    private static final String ADMIN_EMPLOYEE_ID = "admin";
+
+    //统一新增okr币
+    @RequestMapping(value = "assignall", method = RequestMethod.POST)
+    public BaseResponse assignAll(@RequestBody AssignRequest assignRequest, HttpSession session) {
+
+        if (null == session || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
+                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()
+                || !ADMIN_EMPLOYEE_ID.equals(session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString())) {
+            LOGGER.error("current user session invalid.");
+            return new BaseResponse(RespDefine.ERR_CODE_USER_INVALID_ASSIGN_FAILED,
+                    RespDefine.ERR_DESC_USER_INVALID_ASSIGN_FAILED);
+        }
+
+        if (null == assignRequest
+                || null == assignRequest.getAssignDesc()
+                || assignRequest.getExchangeCurrencyNumber() <= 0
+                || assignRequest.getExchangeCurrencyNumber() >= ASSIGN_MAX_MONEY) {
+            LOGGER.error("input param error.");
+            return new BaseResponse(RespDefine.ERR_CODE_EXCHANGE_PARAM_EMPTY_ERROR,
+                    RespDefine.ERR_DESC_EXCHANGE_PARAM_EMPTY_ERROR);
+        }
+
+        LOGGER.info("assign all by admin.");
+        return businessService.assignAll(assignRequest.getExchangeCurrencyNumber(), assignRequest.getAssignDesc());
     }
 
     //todo
@@ -144,7 +177,8 @@ public class BusinessController {
 
         List<MenuButton> buttons = new ArrayList<MenuButton>();
         buttons.add(
-                new MenuButton("xxx1", "发起交易", "https://gw.alipayobjects.com/zos/rmsportal/zOsKZmFRdUtvpqCImOVY.png", "转账OKR币给他人", "../form/step-form/info", ""));
+                new MenuButton("xxx1", "发起交易", "https://gw.alipayobjects.com/zos/rmsportal/zOsKZmFRdUtvpqCImOVY.png", "转账OKR币给他人", "../form/step-form/info", "")
+        );
         buttons.add(
                 new MenuButton("xxx2", "发布任务", "https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png", "发布一条OKR币悬赏任务", "../list/table-list", "")
         );
@@ -153,31 +187,6 @@ public class BusinessController {
         );
         Menu menu = new Menu(buttons);
 
-        /*String result = "[\n" +
-                "  {\n" +
-                "    id: 'xxx1',\n" +
-                "    title: titles[0],\n" +
-                "    logo: avatars[1],\n" +
-                "    description: '转账OKR币给他人',\n" +
-                "    href: '../form/step-form/info',\n" +
-                "    memberLink: '',\n" +
-                "  },\n" +
-                "  {\n" +
-                "    id: 'xxx2',\n" +
-                "    title: titles[1],\n" +
-                "    logo: avatars[0],\n" +
-                "    description: '发布一条OKR币悬赏任务',\n" +
-                "    href: '../list/table-list',\n" +
-                "    memberLink: '',\n" +
-                "  },\n" +
-                "  {\n" +
-                "    id: 'xxx3',\n" +
-                "    title: titles[2],\n" +
-                "    logo: avatars[2],\n" +
-                "    description: '查看OKR币收入支出历史',\n" +
-                "    href: '',\n" +
-                "    memberLink: '',\n" +
-                "  }]";*/
         return menu;
     }
 }

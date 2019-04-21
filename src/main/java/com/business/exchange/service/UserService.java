@@ -24,5 +24,5 @@ public interface UserService {
 
     UserResponse holdRank();
 
-    boolean importAccounts(MultipartFile okrAccountsExcelFile);
+    BaseResponse importAccounts(MultipartFile okrAccountsExcelFile);
 }

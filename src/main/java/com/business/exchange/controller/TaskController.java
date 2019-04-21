@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.business.exchange.constant.RespDefine;
 import com.business.exchange.constant.UserConstants;
 import com.business.exchange.domain.Task;
+import com.business.exchange.model.BaseResponse;
 import com.business.exchange.model.TaskResponse;
 import com.business.exchange.model.TasksResponse;
 import com.business.exchange.service.TaskService;
@@ -113,16 +114,19 @@ public class TaskController {
         return myTaskResp;
     }
 
-    @RequestMapping(value = "receive", method = RequestMethod.GET)
-    public boolean receive(Integer taskId, HttpSession session) {
+    @RequestMapping(value = "receive", method = RequestMethod.POST)
+    public BaseResponse receive(@RequestBody Integer taskId, HttpSession session) {
+        BaseResponse receiveResponse = new BaseResponse(RespDefine.ERR_CODE_TASK_RECEIVE_FAILED,
+                RespDefine.ERR_DESC_TASK_RECEIVE_FAILED);
         if (null == session
                 || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
                 || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
             LOGGER.error("current user session error.");
-            return false;
+            return receiveResponse;
         }
 
         String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+        LOGGER.info("receive task by {}.", employeeID);
         return taskService.receive(employeeID, taskId);
     }
 }

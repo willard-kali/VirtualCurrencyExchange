@@ -225,11 +225,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean importAccounts(MultipartFile okrAccountsExcelFile) {
+    public BaseResponse importAccounts(MultipartFile okrAccountsExcelFile) {
         String fileName = okrAccountsExcelFile.getOriginalFilename();
         if (!fileName.endsWith(".xls") && !fileName.endsWith("xlsx")) {
             LOGGER.error("import excel file type error, {}.", fileName);
-            return false;
+            return new BaseResponse(RespDefine.ERR_CODE_USER_IMPORT_TYPE_NOT_SUPPORTED_FAILED,
+                    RespDefine.ERR_DESC_USER_IMPORT_TYPE_NOT_SUPPORTED_FAILED);
         }
         File assetsExcel = new File(fileName);
         String filePath = null;
@@ -237,7 +238,8 @@ public class UserServiceImpl implements UserService {
             filePath = assetsExcel.getCanonicalPath();
         } catch (IOException e) {
             LOGGER.error("io exception: {}.", e);
-            return false;
+            return new BaseResponse(RespDefine.ERR_CODE_USER_IMPORT_SYSTEM_ERROR_FAILED,
+                    RespDefine.ERR_DESC_USER_IMPORT_SYSTEM_ERROR_FAILED);
         }
         List<Map<String, String>> okrAccounts = ExcelAnalyzer.analyzer(filePath);
         List<User> allUsers = userRepository.findAll();
@@ -254,7 +256,8 @@ public class UserServiceImpl implements UserService {
                 LOGGER.error("no employeeID row passed.");
                 continue;
             }
-            int okrNumber = Integer.valueOf(okrAccount.get(ExcelAnalyzer.OKR_NUMBER_KEY));
+            String okrAccountNumber = okrAccount.get(ExcelAnalyzer.OKR_NUMBER_KEY).split("\\.")[0];
+            int okrNumber = Integer.valueOf(okrAccountNumber);
             String userName = okrAccount.get(ExcelAnalyzer.USERNAME_KEY);
             String department = okrAccount.get(ExcelAnalyzer.DEPARTMENT_KEY);
             String group = okrAccount.get(ExcelAnalyzer.GROUP_KEY);
@@ -272,7 +275,7 @@ public class UserServiceImpl implements UserService {
             toUpdatePwd.add(pwd);
         }
         passwordRepository.saveAll(toUpdatePwd);
-        return true;
+        return new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
     }
 
 }

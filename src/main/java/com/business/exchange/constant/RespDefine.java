@@ -29,6 +29,15 @@ public class RespDefine {
     public static final int ERR_CODE_USER_CREATE_FAILED = 998014;
     public static final String ERR_DESC_USER_CREATE_FAILED = "user create failed";
 
+    public static final int ERR_CODE_USER_INVALID_ASSIGN_FAILED = 998015;
+    public static final String ERR_DESC_USER_INVALID_ASSIGN_FAILED = "user assign invalid failed";
+
+    public static final int ERR_CODE_USER_IMPORT_TYPE_NOT_SUPPORTED_FAILED = 998016;
+    public static final String ERR_DESC_USER_IMPORT_TYPE_NOT_SUPPORTED_FAILED = "import type not supported.";
+
+    public static final int ERR_CODE_USER_IMPORT_SYSTEM_ERROR_FAILED = 998017;
+    public static final String ERR_DESC_USER_IMPORT_SYSTEM_ERROR_FAILED = "system error.";
+
     public static final int ERR_CODE_LOGOUT_FAILED = 998001;
     public static final String ERR_DESC_LOGOUT_FAILED = "login failed";
 
@@ -59,12 +68,31 @@ public class RespDefine {
 
     //task
     public static final int ERR_CODE_TASK_CREATE_FAILED = 998050;
-    public static final String ERR_DESC_TASK_CREATE_FAILED = "task create failed";
+    public static final String ERR_DESC_TASK_CREATE_FAILED = "task create failed.";
 
     public static final int ERR_CODE_TASK_FINISH_FAILED = 998051;
-    public static final String ERR_DESC_TASK_FINISH_FAILED = "task finish failed";
+    public static final String ERR_DESC_TASK_FINISH_FAILED = "task finish failed.";
 
     public static final int ERR_CODE_TASK_QUERY_FAILED = 998052;
-    public static final String ERR_DESC_TASK_QUERY_FAILED = "task query failed";
+    public static final String ERR_DESC_TASK_QUERY_FAILED = "task query failed.";
+
+    public static final int ERR_CODE_TASK_RECEIVE_FAILED = 998053;
+    public static final String ERR_DESC_TASK_RECEIVE_FAILED = "task receive failed.";
+
+    public static final int ERR_CODE_TASK_NOT_EXIST_FAILED = 998054;
+    public static final String ERR_DESC_TASK_NOT_EXIST_FAILED = "task not exist.";
+
+    public static final int ERR_CODE_TASK_ALREADY_CLOSED_FAILED = 998055;
+    public static final String ERR_DESC_TASK_ALREADY_CLOSED_FAILED = "task already closed.";
+
+    public static final int ERR_CODE_TASK_ALREADY_RECEIVED_FAILED = 998056;
+    public static final String ERR_DESC_TASK_ALREADY_RECEIVED_FAILED = "task already received.";
+
+    public static final int ERR_CODE_BUSINESS_ASSIGN_FAILED = 998057;
+    public static final String ERR_DESC_BUSINESS_ASSIGN_FAILED = "business assign failed.";
+
+    public static final int ERR_CODE_BUSINESS_ASSIGN_EMPLOYEE_NOT_EXIST_FAILED = 998058;
+    public static final String ERR_DESC_BUSINESS_ASSIGN_EMPLOYEE_NOT_EXIST_FAILED = "business assign employee not exist failed.";
+
 
 }
