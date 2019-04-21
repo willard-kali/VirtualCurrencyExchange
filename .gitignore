@@ -28,4 +28,7 @@
 /.mvn/
 
 ### Docs ###
-.xlsx
+*.xlsx
+
+### Unknown ###
+*.DS_Store
