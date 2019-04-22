@@ -14,6 +14,8 @@ public interface BusinessService {
 
     BusinessResponse history(int currentPage, int pageSize, String employeeID);
 
+    BusinessResponse historyAll(String employeeID);
+
     BaseResponse assign(List<String> employeeIDs, int exchangeCurrencyNumber, String assignDesc);
 
     BaseResponse assignAll(String employeeID, int exchangeCurrencyNumber, String assignDesc);

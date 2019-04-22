@@ -18,6 +18,11 @@ public class BusinessResponse extends BaseResponse {
         super(resultCode, errDesc);
     }
 
+    public BusinessResponse(int resultCode, String errDesc, List<Business> businesses) {
+        super(resultCode, errDesc);
+        this.businesses = businesses;
+    }
+
     public BusinessResponse(int resultCode, String errDesc, List<Business> businesses, Pagination pagination) {
         super(resultCode, errDesc);
         this.businesses = businesses;

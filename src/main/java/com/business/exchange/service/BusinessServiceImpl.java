@@ -141,6 +141,27 @@ public class BusinessServiceImpl implements BusinessService {
     }
 
     @Override
+    public BusinessResponse historyAll(String employeeID) {
+        BusinessResponse historyQueryResp = new BusinessResponse(RespDefine.ERR_CODE_QUERY_HISTORY_BUSINESS_FAILED,
+                RespDefine.ERR_DESC_QUERY_HISTORY_BUSINESS_FAILED);
+
+        User user = userRepository.findByEmployeeID(employeeID);
+
+        if (null == user) {
+            LOGGER.error("current user's session invalid.");
+            return historyQueryResp;
+        }
+
+        int userId = user.getUserId();
+        List<Business> businesses = businessRepository
+                .findAllBySrcUserIdEqualsOrDestUserIdEqualsOrderByExchangeDateDesc(userId, userId);
+
+        historyQueryResp = new BusinessResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS, businesses);
+
+        return historyQueryResp;
+    }
+
+    @Override
     public BaseResponse assign(List<String> employeeIDs, int okrAssignNumber, String assignDesc) {
         BaseResponse assignResp = new BaseResponse(RespDefine.CODE_SUCCESS, RespDefine.DESC_SUCCESS);
         for (String employeeID : employeeIDs) {

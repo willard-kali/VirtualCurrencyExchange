@@ -194,6 +194,30 @@ public class BusinessController {
     }
 
     /**
+     * 查询交易记录
+     * @param session session
+     * @return
+     */
+    @RequestMapping(value = "history_all", method = RequestMethod.GET)
+    public BusinessResponse exchangeHistoryAll(HttpSession session) {
+
+        BusinessResponse historyQueryResponse = new BusinessResponse(RespDefine.ERR_CODE_QUERY_HISTORY_BUSINESS_FAILED,
+                RespDefine.ERR_DESC_QUERY_HISTORY_BUSINESS_FAILED);
+
+        if (null == session || null == session.getAttribute(SESSION_EMPLOYEE_ID_NAME)
+                || session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString().isEmpty()) {
+            LOGGER.error("current user session invalid.");
+            return historyQueryResponse;
+        }
+
+        String employeeID = session.getAttribute(SESSION_EMPLOYEE_ID_NAME).toString();
+
+        historyQueryResponse = businessService.historyAll(employeeID);
+        LOGGER.info("query {} all exchange history.", employeeID);
+        return historyQueryResponse;
+    }
+
+    /**
      * 导出账单
      * @param session session
      */
